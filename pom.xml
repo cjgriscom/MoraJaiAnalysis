@@ -43,5 +43,6 @@
 
 	<modules>
 		<module>morajai-analysis</module>
+		<module>morajai-core</module>
 	</modules>
 </project>
