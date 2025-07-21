@@ -47,11 +47,11 @@ public class MJAnalysis {
 
 	private final Path storageDir;
 
-	private static class DepthTracker {
-		private final byte[] depths;
+	static class DepthTracker {
+		final byte[] depths;
 
-		private static final byte UNREACHED = -1;
-		private static final byte DEAD = -2;
+		static final byte UNREACHED = -1;
+		static final byte DEAD = -2;
 
 		DepthTracker() {
 			depths = new byte[1000000000];
@@ -59,7 +59,8 @@ public class MJAnalysis {
 		}
 		
 		public int getDepth(int state) {
-			return depths[state] & 0xff;
+			byte result = depths[state];
+			return result >= 0 || result < -3 ? depths[state] & 0xff : result;
 		}
 
 		public void setDepth(int state, int depth) {
@@ -74,7 +75,6 @@ public class MJAnalysis {
 		public void markDead(int state) {
 			depths[state] = DEAD;
 		}
-		
 	}
 
 	public MJAnalysis(Path storageDir, Color[] targetColors, boolean noBlue) {
@@ -109,7 +109,7 @@ public class MJAnalysis {
 		statsUpdate.accept(stats);
 		
 		try (ExecutorService executor = Executors.newFixedThreadPool(threads);  
-			 PrintStream out = new PrintStream(new File(storageDir.resolve("depths_v2_" + idx + filename + ".txt").toString()))) {
+			 PrintStream out = new PrintStream(new File(storageDir.resolve("depths_v3_" + idx + filename + ".txt").toString()))) {
 			out.println("Starting analysis for " + idx + " " + filename + " with CPU - pruner: " + true);
 
 			MoraJaiBox box = new MoraJaiBox();
@@ -258,20 +258,12 @@ public class MJAnalysis {
 						depths.markDead(state);
 					}
 				}
-
-				// Write results to depths array		
+	
 				try {
-					boolean firstResult = true;
 					for (Future<ArrayList<Integer>> future : futures) {
 						ArrayList<Integer> states = future.get();
 						for (int state : states) {
 							depths.setDepth(state, currentDepth);
-							if (counter < 180) {
-								out.println(stateToJson(state));
-							} else if (firstResult) {
-								out.println(stateToJson(state));
-								firstResult = false;
-							}
 						}
 					}
 				} catch (InterruptedException | ExecutionException e) {
@@ -280,6 +272,14 @@ public class MJAnalysis {
 				}
 				
 			}
+
+			stats.backtracking = true;
+			statsUpdate.accept(stats);
+			MJDepthsBacktracker backtracker = new MJDepthsBacktracker(depths);
+			backtracker.backtrack();
+			backtracker.reportResults(out);
+			stats.backtracking = false;
+			statsUpdate.accept(stats);
 
 			stats.complete = true;
 			out.println("Complete");
@@ -378,9 +378,13 @@ public class MJAnalysis {
 		numCpuThreadsOption.setRequired(false);
 		options.addOption(numCpuThreadsOption);
 
-		Option numCpuInnerThreadsOption = new Option("i", "numCpuInnerThreads", true, "Number of CPU inner threads");
+		Option numCpuInnerThreadsOption = new Option("C", "numCpuInnerThreads", true, "Number of CPU inner threads");
 		numCpuInnerThreadsOption.setRequired(false);
 		options.addOption(numCpuInnerThreadsOption);
+
+		Option noBlueOption = new Option("b", "noBlue", false, "No blue");
+		noBlueOption.setRequired(false);
+		options.addOption(noBlueOption);
 
 		Option storageDirOption = new Option("d", "storageDir", true, "Storage directory");
 		storageDirOption.setRequired(false);
@@ -525,7 +529,7 @@ public class MJAnalysis {
 					} else if (s.complete) {
 						line = String.format(headerFormat, ids[i] == -1 ? "-" : ids[i], s.idx, s.filename, "Complete", s.depth, s.statesAtDepth, s.unreached, s.dead);
 					} else {
-						String runStatus = s.pruning ? "Pruning" : "Running";
+						String runStatus = s.backtracking ? "Backtrack" : s.pruning ? "Pruning" : "Running";
 						line = String.format(headerFormat, ids[i] == -1 ? "-" : ids[i], s.idx, s.filename, runStatus, s.depth, s.statesAtDepth, s.unreached, s.dead);
 					}
 					tg.putString(0, i + 1, String.format("%-" + terminalSize.getColumns() + "s", line));

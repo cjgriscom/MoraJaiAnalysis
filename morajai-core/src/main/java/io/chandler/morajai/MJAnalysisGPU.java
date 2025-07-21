@@ -34,6 +34,7 @@ import org.jocl.cl_platform_id;
 import org.jocl.cl_program;
 import org.jocl.cl_queue_properties;
 
+import io.chandler.morajai.MJAnalysis.DepthTracker;
 import io.chandler.morajai.MoraJaiBox.Color;
 
 public class MJAnalysisGPU {
@@ -151,12 +152,13 @@ public class MJAnalysisGPU {
 			CL.clBuildProgram(program, 0, null, null, null, null);
 			kernel = CL.clCreateKernel(program, "mj_solve", null);
 
-			try (PrintStream out = new PrintStream(new File(storageDir.resolve("depths_v2_" + idx + filename + ".txt").toString()))) {
+			try (PrintStream out = new PrintStream(new File(storageDir.resolve("depths_v3_" + idx + filename + ".txt").toString()))) {
 				out.println("Starting analysis for " + idx + " " + filename + " with GPU - pruner: " + (pruneExecutor != null));
 				long[] reached = new long[1000000000 / 64];
 				long[] current = new long[1000000000 / 64];
 				long[] next = new long[1000000000 / 64];
-				int counter = generateDepth0(targetColors, current);
+				DepthTracker depths = new DepthTracker();
+				int counter = generateDepth0(targetColors, current, depths);
 				stats.depth = 0;
 				stats.statesAtDepth = counter;
 				stats.begun = true;
@@ -302,32 +304,42 @@ public class MJAnalysisGPU {
 
 					
 					// Count 'set' bits in next array
-					for (int i = 0; i < 1000000000; i++) {
-						if (isSet(next, i)) {
-							counter++;
+					for (int i = 0; i < next.length; i++) {
+						long l = next[i];
+						if (l != 0) {
+							for (int j = 0; j < 64; j++) {
+								if (isSet(next, i * 64 + j)) {
+									counter++;
+								}
+							}
 						}
 					}
 					//System.out.println("Counted " + counter + " states");
 					
 					if (counter > 0) {
-						if (counter < 180) {
-							for (int i = 0; i < 1000000000; i+=64) {
-								long l = next[i/64];
-								if (l == 0) continue;
-								for (int j = 0; j < 64; j++) {
-									if (isSet(next, i + j)) {
-										out.println(stateToJson(targetColors, i + j));
-									}
-								}
-							}
-						}
 						for (int i = 0; i < reached.length; i++) {
 							reached[i] |= current[i];
 							current[i] = next[i];
+							if (next[i] != 0L) {
+								for (int j = 0; j < 64; j++) {
+									if (isSet(next, i * 64 + j)) {
+										depths.setDepth(i * 64 + j, depth);
+									}
+								}
+							}
 							next[i] = 0L;
 						}
 					}
 				}
+
+				stats.backtracking = true;
+				statsUpdate.accept(stats);
+				MJDepthsBacktracker backtracker = new MJDepthsBacktracker(depths);
+				backtracker.backtrack();
+				backtracker.reportResults(out);
+				stats.backtracking = false;
+				statsUpdate.accept(stats);
+
 				stats.complete = true;
 				out.println("Complete");
 				statsUpdate.accept(stats);
@@ -345,7 +357,7 @@ public class MJAnalysisGPU {
 		}
 	}
 
-	private int generateDepth0(MoraJaiBox.Color[] targetColors, long[] depths) {
+	private int generateDepth0(MoraJaiBox.Color[] targetColors, long[] depths, DepthTracker depthsTracker) {
 		int counter = 0;
 		MoraJaiBox.Color[] initColors = new MoraJaiBox.Color[9];
 		initColors[0] = targetColors[0];
@@ -370,7 +382,9 @@ public class MJAnalysisGPU {
 
 			box.initFromState(targetColors, recomp);
 			if (box.areInnerMatchingOuter()) {
-				set(depths, box.getState());
+				int state = box.getState();
+				depthsTracker.setDepth(state, 0);
+				set(depths, state);
 				counter++;
 			}
 		}
@@ -385,13 +399,13 @@ public class MJAnalysisGPU {
 		ExecutorService executor = Executors.newFixedThreadPool(3);
 		ExecutorService pruneExecutor = Executors.newWorkStealingPool(16);
 
-		for (int i = 0; i <3; i++) {
+		for (int i = 0; i <1; i++) {
 			final int idx = i;
 			executor.submit(() -> {
 				try {
 					MJAnalysisGPU analysis = new MJAnalysisGPU(Paths.get("morajai_gpu_depths"), false);
-					if (idx > 0) analysis.enablePrune(pruneExecutor);
-					analysis.fullDepthAnalysis(new Color[] {C_PI, C_PI, C_PI, C_PI}, 5555, (stats) -> {
+					/*if (idx > 0)*/ analysis.enablePrune(pruneExecutor);
+					analysis.fullDepthAnalysis(new Color[] {C_WH, C_WH, C_YE, C_RD}, 4471, (stats) -> {
 						System.out.println(stats.filename + " " + stats.depth + " " + stats.statesAtDepth + " " + stats.unreached);
 					});
 				} catch (Exception e) {

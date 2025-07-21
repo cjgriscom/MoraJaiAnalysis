@@ -23,7 +23,11 @@ public class ResultStats {
 
 		BiFunction<JSONArray, HashSet<String>, Boolean> filter = (data, colors) -> {
 			// return colors.contains("PI"); // 388_C_GY_C_BK_C_BU_C_BU - Experimental 1
-			return !colors.contains("YE") || !colors.contains("BK") || !colors.contains("PU");
+			// return !colors.contains("BK") && !colors.contains("GN") && !colors.contains("RD"); - Experimental 4
+			// return !colors.contains("BU"); - Experimental 3
+			// 4471_C_WH_C_WH_C_YE_C_RD - Experimental 4
+			return (!colors.contains("PU") || !colors.contains("YE")) && (!colors.contains("GN"));
+			
 		};
 
 		// Read into JSONObject
