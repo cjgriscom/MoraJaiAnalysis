@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.chandler.morajai</groupId>
+  <artifactId>morajai-simulator</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>io.chandler</groupId>
+    <artifactId>morajai</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <name>morajai-simulator</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.javascript</groupId>
+      <artifactId>closure-compiler</artifactId>
+      <version>v20250706</version>
+      <type>pom</type>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>convert-svg-to-js</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>io.chandler.morajai.tools.SVGToJS</mainClass>
+              <arguments>
+                <argument>${project.basedir}/src/main/resources/morajai_minified.svg</argument>
+                <argument>morajai_svg</argument>
+                <argument>${project.build.directory}/js/morajai_svg.js</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>build-wasm</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>sh</executable>
+              <arguments>
+                <argument>-c</argument>
+                <argument>${project.basedir}/src/main/c/build_wasm.sh</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Copy src/main/js/ to target/js -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <outputDirectory>${project.build.directory}/js</outputDirectory>
+          <resources>
+            <resource>
+              <directory>${project.basedir}/src/main/js</directory>
+            </resource>
+          </resources>
+        </configuration>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+				<groupId>com.github.blutorange</groupId>
+				<artifactId>closure-compiler-maven-plugin</artifactId>
+				<version>2.32.0</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<baseTargetDir>${project.build.directory}/js_out</baseTargetDir>
+					<closureLanguageOut>ECMASCRIPT_2018</closureLanguageOut>
+				</configuration>
+				<executions>
+					<execution>
+            <?m2e ignore ?>
+						<id>morajai-minify</id>
+						<phase>prepare-package</phase>
+						<configuration>
+							<baseSourceDir>${project.build.directory}</baseSourceDir>
+              <closureChunkOutputType>ES_MODULES</closureChunkOutputType>
+							<skipMinify>false</skipMinify>
+							<includes>
+								<include>morajai_svg.js</include>
+								<include>morajai_wasm.js</include>
+								<include>morajai.js</include>
+							</includes>
+							<outputFilename>morajai-bundle.min.js</outputFilename>
+						</configuration>
+						<goals>
+							<goal>minify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mora Jai Simulator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <script>
+
+        async function main() {
+
+            // Generate timestamp for cache busting
+            const timestamp = new Date().getTime();
+            const cacheBust = `?v=${timestamp}`;
+
+            // Dynamically import the bundled module and get the default export
+            await import(`./morajai-bundle.min.js${cacheBust}`);
+
+            const MoraJaiSimulator = window['MoraJaiSimulator'];
+            if (!MoraJaiSimulator) {
+                console.error("Failed to load MoraJaiSimulator class.");
+                return;
+            }
+
+            // Instantiate here
+
+            const initialSpoilerMode = false;
+
+            const onResizeCanvas = (width) => {
+                console.log("onResizeCanvas", width);
+            }
+
+            const onUpdateState = (targetColors, targetTiles, activeStickers) => {
+                console.log("onUpdateState", targetColors, targetTiles, activeStickers);
+            }
+
+            const onSolved = () => {
+                console.log("onSolved");
+            }
+
+            var morajai_box;
+            
+            window.addEventListener('load', function() {
+                morajai_box = new MoraJaiSimulator(
+                    "puzzle-canvas",
+                    initialSpoilerMode,
+                    onResizeCanvas,
+                    onUpdateState,
+                    onSolved);
+
+                document.getElementById('spoilerMode').addEventListener('click', function() {
+                    var spoilerMode = document.getElementById('spoilerMode').checked;
+                    morajai_box.setSpoilerMode(spoilerMode);
+                    morajai_box.render();
+                });
+
+                morajai_box.start();
+
+                morajai_box.loadPuzzle(["WH","WH","WH","WH","BK","BK","BK","BK","WH"], ["WH","WH","BK","WH"]);
+                
+            });
+        }
+
+        main();
+
+    </script>
+</head>
+<body>
+
+
+<div class="row">
+    <div class="col-12 col-md-12 col-xl-6 p-2 position-relative">
+        <div class="mb-3 d-flex">
+            <h5>&nbsp;</h5>
+            <div class="form-check form-switch d-flex align-items-center">
+                <input class="form-check-input" type="checkbox" id="spoilerMode">
+                <label class="form-text form-check-label ms-2" for="spoilerMode">Spoiler Mode</label>
+            </div>
+        </div>
+        <canvas id="puzzle-canvas" class="w-100 p-0"></canvas>
+    </div>
+</div>
+
+</body>
+</html>

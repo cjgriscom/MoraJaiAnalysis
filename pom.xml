@@ -42,7 +42,8 @@
 	</dependencies>
 
 	<modules>
-		<module>morajai-analysis</module>
 		<module>morajai-core</module>
+		<module>morajai-analysis</module>
+		<module>morajai-simulator</module>
 	</modules>
 </project>
