@@ -1,19 +1,21 @@
 package io.chandler.morajai;
 
-import java.nio.file.Files;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.function.BiFunction;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.hjson.JsonArray;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
 
 public class ResultStats {
 	public static void main(String[] args) throws Exception {
-		Path resultsFile = Paths.get("results", "results.json");
+		Path resultsFile = Paths.get("results/v3", "results.json");
 
 		int numCPU = 0;
 		int numGPU = 0;
@@ -21,67 +23,89 @@ public class ResultStats {
 		int maxDepth = 0;
 		ArrayList<String> maxDepthNames = new ArrayList<>();
 
-		BiFunction<JSONArray, HashSet<String>, Boolean> filter = (data, colors) -> {
+		BiFunction<JsonArray, HashSet<String>, Boolean> filter = (data, colors) -> {
 			// return colors.contains("PI"); // 388_C_GY_C_BK_C_BU_C_BU - Experimental 1
 			// return !colors.contains("BK") && !colors.contains("GN") && !colors.contains("RD"); - Experimental 4
 			// return !colors.contains("BU"); - Experimental 3
 			// 4471_C_WH_C_WH_C_YE_C_RD - Experimental 4
 			return (!colors.contains("PU") || !colors.contains("YE")) && (!colors.contains("GN"));
-			
 		};
 
-		// Read into JSONObject
-		JSONObject results = new JSONObject(Files.readString(resultsFile));
+		ArrayList<String> acceptedNames = new ArrayList<>();
 
-		Iterator<String> keys = results.keys();
-		while (keys.hasNext()) {
-			String key = keys.next();
-			JSONObject result = results.getJSONObject(key);
-			//System.out.println(key + ": " + result.toString());
+		// Read into JsonObject
+		JsonObject results = 
+			JsonObject.readHjson(
+				new BufferedReader(
+					new FileReader(resultsFile.toFile()), 1024*1024*10)).asObject();
 
-			if (result.getString("executor").equals("CPU")) {
+		for (String key : results.names()) {
+			JsonObject result = results.get(key).asObject();
+
+			String executor = result.getString("executor", "");
+			if (executor.equals("CPU")) {
 				numCPU++;
-			} else if (result.getString("executor").equals("GPU")) {
+			} else if (executor.equals("GPU")) {
 				numGPU++;
 			}
 
-			boolean containsMaxResults = result.getJSONObject("resultMap").has(""+result.getInt("maxDepth"));
-			
+			JsonObject resultMap = result.get("resultMap").asObject();
+			int maxDepthValue = result.getInt("maxDepth", 0);
+			boolean containsMaxResults = resultMap.get(""+maxDepthValue) != null;
+
 			if (!containsMaxResults) {
-				System.out.println("No results at max depth for " + result.getInt("idx") + result.getString("name"));
+				System.out.println("No results at max depth for " + result.getInt("idx", 0) + result.getString("name", ""));
 				noResults++;
 				continue;
 			}
 
 			boolean acceptedResult = false;
+			int acceptedValue = 0;
+			// resultMap.get(""+maxDepth) is a JsonArray of arrays
 
-			JSONArray resultsAtMax = 
-				result.getJSONObject("resultMap").getJSONArray(""+result.getInt("maxDepth"));
-			for (int i = 0; i < resultsAtMax.length(); i++) {
-				JSONArray resultAtMax = resultsAtMax.getJSONArray(i);
-				HashSet<String> colors = new HashSet<>();
-				for (int j = 0; j < resultAtMax.length(); j++) {
-					String color = resultAtMax.getString(j);
-					colors.add(color);
-				}
+			ArrayList<String> localResults = new ArrayList<>();
+			for (int depth = maxDepthValue; depth > 0; depth--) {
 
-				if (filter.apply(resultAtMax, colors)) {
-					acceptedResult = true;
-					break;
+				if (!localResults.isEmpty()) break;
+
+				JsonValue v = resultMap.get(""+depth);
+				if (v == null || v.isNull()) break;
+				JsonArray resultsAtMax = v.asArray();
+				if (resultsAtMax == null || resultsAtMax.size() == 0) continue;
+
+				for (int i = 0; i < resultsAtMax.size(); i++) {
+					int resultAtMax = resultsAtMax.get(i).asInt();
+					// Convert int to colors
+					String stateJson = MJAnalysis.stateToJson(resultAtMax);
+					JsonArray stateJsonArray = JsonValue.readHjson(stateJson).asArray();
+					HashSet<String> colors = new HashSet<>();
+					for (int j = 0; j < stateJsonArray.size(); j++) {
+						String color = stateJsonArray.get(j).asString();
+						colors.add(color);
+					}
+
+					if (filter.apply(stateJsonArray, colors)) {
+						acceptedResult = true;
+						if (depth >= acceptedValue) {
+							acceptedValue = depth;
+							localResults.add(result.getInt("idx", 0) + result.getString("name", "") + " " + resultAtMax + " (" + depth + ")");
+						}
+					}
 				}
 			}
 
 			if (!acceptedResult) continue;
 
-			if (result.getInt("maxDepth") > maxDepth) {
-				maxDepth = result.getInt("maxDepth");
+			if (acceptedValue > maxDepth) {
+				maxDepth = acceptedValue;
 				maxDepthNames.clear();
-				maxDepthNames.add(result.getInt("idx") + result.getString("name"));
-			} else if (result.getInt("maxDepth") == maxDepth) {
-				maxDepthNames.add(result.getInt("idx") + result.getString("name"));
+				maxDepthNames.add(result.getInt("idx", 0) + result.getString("name", ""));
+				acceptedNames.clear();
+				acceptedNames.addAll(localResults);
+			} else if (acceptedValue == maxDepth) {
+				maxDepthNames.add(result.getInt("idx", 0) + result.getString("name", ""));
+				acceptedNames.addAll(localResults);
 			}
-
-			//break;
 		}
 
 		System.out.println("Num CPU: " + numCPU);
@@ -89,5 +113,10 @@ public class ResultStats {
 		System.out.println("No results: " + noResults);
 		System.out.println("Max depth: " + maxDepth);
 		System.out.println("Max depth names: " + maxDepthNames);
+
+		Collections.sort(acceptedNames);
+		for (String name : acceptedNames) {
+			System.out.println(name);
+		}
 	}
 }

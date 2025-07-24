@@ -88,9 +88,9 @@ public class MJAnalysis {
 		return this;
 	}
 
-	public String stateToJson(int state) {
+	public static String stateToJson(int state) {
 		MoraJaiBox box = new MoraJaiBox();
-		box.initFromState(targetColors, state);
+		box.initFromState(new Color[]{C_GY, C_GY, C_GY, C_GY}, state);
 		StringJoiner joiner = new StringJoiner(", ");
 		for (int i = 0; i < 9; i++) {
 			joiner.add("\"" + box.getTileColor(i).name().replace("C_", "") + "\"");

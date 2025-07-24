@@ -16,7 +16,7 @@ import org.json.JSONObject;
 
 public class CopyCompleteResults {
 	public static void main(String[] args) throws Exception {
-		Path src = Paths.get("results");
+		Path src = Paths.get("results/v3");
 		System.out.println(src.toAbsolutePath());
 
 		// Loop thru the txt files in the src directory
@@ -24,6 +24,7 @@ public class CopyCompleteResults {
 		Files.walk(src)
 			.filter(Files::isRegularFile)
 			.filter(path -> path.getFileName().toString().endsWith(".txt"))
+			//.filter(path -> path.getFileName().toString().contains("4954"))
 			.forEach(txtFiles::add);
 
 		TreeMap<Integer, JSONObject> results = new TreeMap<>();
@@ -33,8 +34,10 @@ public class CopyCompleteResults {
 			JSONObject entry = new JSONObject();
 			boolean iscomplete = false;
 			JSONObject resultMap = new JSONObject();
+			ArrayList<Integer> backtrackedSizeMap = new ArrayList<>();
 			ArrayList<Integer> sizeMap = new ArrayList<>();
 			int maxDepth = 0;
+			int currentBacktrackedDepth = 0;
 
 			Scanner scanner = new Scanner(txtFile.toFile());
 			while (scanner.hasNextLine()) {
@@ -53,6 +56,16 @@ public class CopyCompleteResults {
 					entry.put("pruned", Boolean.parseBoolean(pruned));
 				} else if (line.startsWith("Complete")) {
 					iscomplete = true;
+				} else if (line.startsWith(header = "Backedtracked depth ")) {
+					line = line.substring(header.length());
+					String[] parts = line.split(" ");
+					String depth = parts[0];
+					String states = parts[2];
+					if (Integer.parseInt(depth) != backtrackedSizeMap.size()) throw new RuntimeException("Depth mismatch");
+					int size = Integer.parseInt(states);
+					backtrackedSizeMap.add(size);
+					if (size == 0) resultMap.put(depth, new JSONArray());
+					currentBacktrackedDepth = Integer.parseInt(depth);
 				} else if (line.startsWith(header = "Depth ")) {
 					line = line.substring(header.length());
 					String[] parts = line.split(" ");
@@ -61,22 +74,16 @@ public class CopyCompleteResults {
 					if (Integer.parseInt(depth) != sizeMap.size()) throw new RuntimeException("Depth mismatch");
 					sizeMap.add(Integer.parseInt(states));
 					maxDepth = Math.max(maxDepth, Integer.parseInt(depth));
-				} else if (line.startsWith("[")) {
-					JSONArray result = new JSONArray(line);
-					JSONArray resultArray;
-					String key = (sizeMap.size()) + "";
-					if (resultMap.has(key)) {
-						resultArray = resultMap.getJSONArray(key);
-					} else {
-						resultArray = new JSONArray();
-					}
-					resultArray.put(result);
-					resultMap.put(key, resultArray);
+				} else if (!line.isEmpty() && Character.isDigit(line.charAt(0))) {
+					JSONArray result = new JSONArray("[" + line + "]");
+					String key = currentBacktrackedDepth + "";
+					resultMap.put(key, result);
 				}
 			}
 
 			entry.put("maxDepth", maxDepth);
 			entry.put("sizeMap", sizeMap);
+			entry.put("backtrackedSizeMap", backtrackedSizeMap);
 			entry.put("resultMap", resultMap);
 
 			if (iscomplete) {

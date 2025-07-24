@@ -48,6 +48,8 @@
                     onResizeCanvas,
                     onUpdateState,
                     onSolved);
+                
+                window.morajai_box = morajai_box;
 
                 document.getElementById('spoilerMode').addEventListener('click', function() {
                     var spoilerMode = document.getElementById('spoilerMode').checked;
@@ -70,7 +72,7 @@
 
 
 <div class="row">
-    <div class="col-12 col-md-12 col-xl-6 p-2 position-relative">
+    <div class="col-5 p-2 position-relative">
         <div class="mb-3 d-flex">
             <h5>&nbsp;</h5>
             <div class="form-check form-switch d-flex align-items-center">
@@ -80,7 +82,128 @@
         </div>
         <canvas id="puzzle-canvas" class="w-100 p-0"></canvas>
     </div>
+    <div class="col-7 p-2">
+        <label for="resultList" class="form-label">Paste Result List Here:</label>
+        <textarea id="resultList" class="form-control" rows="6" placeholder="Paste one result per line..."></textarea>
+        <div class="d-flex align-items-center mt-2">
+            <button id="prevResult" class="btn btn-secondary me-2">Prev</button>
+            <span id="resultIndex" class="me-2">0 / 0</span>
+            <button id="nextResult" class="btn btn-secondary">Next</button>
+        </div>
+        <!-- Added: Result details display fields -->
+        <div class="mt-4">
+            <div class="mb-2">
+                <label for="resultId" class="form-label">Id:</label>
+                <input type="text" id="resultId" class="form-control" readonly>
+            </div>
+            <div class="mb-2">
+                <label for="resultDepth" class="form-label">Depth:</label>
+                <input type="text" id="resultDepth" class="form-control" readonly>
+            </div>
+            <div class="mb-2">
+                <label for="resultTargetColors" class="form-label">Target Colors:</label>
+                <input type="text" id="resultTargetColors" class="form-control" readonly>
+            </div>
+            <div class="mb-2">
+                <label for="resultIntEncoding" class="form-label">Puzzle int encoding:</label>
+                <input type="text" id="resultIntEncoding" class="form-control" readonly>
+            </div>
+            <div class="mb-2">
+                <label for="resultPuzzleColors" class="form-label">Puzzle Colors Array:</label>
+                <input type="text" id="resultPuzzleColors" class="form-control" readonly>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script>
+
+        function loadPuzzleStub(str) {
+            // Example: 1049_C_RD_C_GY_C_WH_C_OR 147983491 (67)
+            if (!str) return;
+            const match = str.match(/^(\d+)_C_([A-Z]{2})_C_([A-Z]{2})_C_([A-Z]{2})_C_([A-Z]{2})\s+(\d+)\s+\((\d+)\)$/);
+            if (!match) {
+                console.warn("Could not parse result string:", str);
+                // Clear fields if parse fails
+                document.getElementById('resultId').value = '';
+                document.getElementById('resultDepth').value = '';
+                document.getElementById('resultTargetColors').value = '';
+                document.getElementById('resultIntEncoding').value = '';
+                document.getElementById('resultPuzzleColors').value = '';
+                return;
+            }
+            const id = match[1];
+            const targetColors = [match[2], match[3], match[4], match[5]];
+            const puzzleInt = parseInt(match[6], 10);
+            const depth = parseInt(match[7], 10);
+
+            const colorEnum = [
+                "GY", "RD", "GN", "BK", "WH", "PI", "PU", "YE", "BU", "OR"
+            ];
+            let state = puzzleInt;
+            const puzzleColors = [];
+            for (let i = 0; i < 9; i++) {
+                const digit = state % 10;
+                puzzleColors.unshift(colorEnum[digit]);
+                state = Math.floor(state / 10);
+            }
+
+            // Set the fields
+            document.getElementById('resultId').value = id;
+            document.getElementById('resultDepth').value = depth;
+            document.getElementById('resultTargetColors').value = JSON.stringify(targetColors);
+            document.getElementById('resultIntEncoding').value = puzzleInt;
+            document.getElementById('resultPuzzleColors').value = JSON.stringify(puzzleColors);
+
+            window.morajai_box.loadPuzzle(puzzleColors, targetColors);
+        }
+
+        (function setupResultListPaginator() {
+            const textarea = document.getElementById('resultList');
+            const prevBtn = document.getElementById('prevResult');
+            const nextBtn = document.getElementById('nextResult');
+            const indexLabel = document.getElementById('resultIndex');
+
+            let results = [];
+            let currentIndex = 0;
+
+            function updatePaginator() {
+                if (results.length === 0) {
+                    indexLabel.textContent = '0 / 0';
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = true;
+                    return;
+                }
+                indexLabel.textContent = (currentIndex + 1) + ' / ' + results.length;
+                prevBtn.disabled = currentIndex === 0;
+                nextBtn.disabled = currentIndex === results.length - 1;
+                loadPuzzleStub(results[currentIndex]);
+            }
+
+            function parseResults() {
+                results = textarea.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+                currentIndex = 0;
+                updatePaginator();
+            }
+
+            textarea.addEventListener('input', parseResults);
+            prevBtn.addEventListener('click', function() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updatePaginator();
+                }
+            });
+            nextBtn.addEventListener('click', function() {
+                if (currentIndex < results.length - 1) {
+                    currentIndex++;
+                    updatePaginator();
+                }
+            });
+
+            // Initialize
+            updatePaginator();
+        })();
+
+    </script>
 </body>
 </html>
