@@ -89,9 +89,10 @@ public class MJColorPrune {
 							if (targetColorCount != 1) states.set(state-startState); 
 						} else if (oranges < targetColorCount) {
 							// Sum blue and grey and white
-							int bgw = cnt[grayOrd] + cnt[blueOrd] + cnt[whiteOrd];
+							int bgw = cnt[blueOrd] > 0 ? cnt[grayOrd] + cnt[blueOrd] + cnt[whiteOrd] : 0;
+							int black = cnt[redOrd] > 0 && cnt[blueOrd] > 0 ? cnt[blackOrd] : 0;
 							// Simplified but good enough
-							if (oranges + bgw < targetColorCount) {
+							if (oranges + bgw + black < targetColorCount) {
 								states.set(state-startState);
 							}
 						}
