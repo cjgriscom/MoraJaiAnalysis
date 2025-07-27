@@ -25,8 +25,8 @@ public class MJSolver {
      * @param targetColor The target color for all corners
      * @return List of tile indices to press (0-8), or null if no solution found
      */
-    public static List<Integer> solve(String[] puzzleState, String targetColor) {
-        return solve(puzzleState, targetColor, 70); // Default max depth of 20
+    public static List<Integer> solve(String[] puzzleState, String[] targetColor) {
+        return solve(puzzleState, targetColor, 85); // Default max depth of 20
     }
 
     /**
@@ -36,7 +36,7 @@ public class MJSolver {
      * @param maxDepth Maximum search depth
      * @return List of tile indices to press (0-8), or null if no solution found
      */
-    public static List<Integer> solve(String[] puzzleState, String targetColor, int maxDepth) {
+    public static List<Integer> solve(String[] puzzleState, String[] targetColor, int maxDepth) {
         if (puzzleState.length != 9) {
             throw new IllegalArgumentException("Puzzle state must have exactly 9 tiles");
         }
@@ -50,13 +50,8 @@ public class MJSolver {
             }
         }
 
-        Color target = COLOR_MAP.get(targetColor);
-        if (target == null) {
-            throw new IllegalArgumentException("Invalid target color: " + targetColor);
-        }
-
         // Set up target colors for all 4 corners (same color)
-        Color[] targetColors = {target, target, target, target};
+        Color[] targetColors = {COLOR_MAP.get(targetColor[0]), COLOR_MAP.get(targetColor[1]), COLOR_MAP.get(targetColor[2]), COLOR_MAP.get(targetColor[3])};
 
         // Initialize the puzzle
         MoraJaiBox box = new MoraJaiBox();
@@ -170,28 +165,15 @@ public class MJSolver {
      * Test method
      */
     public static void main(String[] args) {
-        String[] puzzleState = {"OR", "PU", "BU", "WH", "WH", "RD", "BK", "RD", "YE"};
-        String targetColor = "BK";
+        String[] puzzleState = {"YE","BK","PU","WH","PI","GY","OR","BK","PI"};
+        String[] targetColor = {"PI","WH","WH","WH"};
         
         long startTime = System.currentTimeMillis();
-        List<Integer> solution = solve(puzzleState, targetColor);
+        List<Integer> solution = solve(puzzleState, targetColor); 
         long endTime = System.currentTimeMillis();
         
         System.out.println(solutionToString(solution));
         System.out.println("Search completed in " + (endTime - startTime) + " ms");
         
-        // Test with a simple case
-        System.out.println("\n" + "=".repeat(50));
-        System.out.println("Testing with a simple case:");
-        String[] simplePuzzle = {"BK", "GY", "BK", "GY", "GY", "GY", "BK", "GY", "BK"};
-        printPuzzle(simplePuzzle);
-        System.out.println("Target color: BK");
-        
-        startTime = System.currentTimeMillis();
-        solution = solve(simplePuzzle, "BK");
-        endTime = System.currentTimeMillis();
-        
-        System.out.println(solutionToString(solution));
-        System.out.println("Search completed in " + (endTime - startTime) + " ms");
     }
 }
