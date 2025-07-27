@@ -39,7 +39,8 @@ public class CopyCompleteResults {
 			int maxDepth = 0;
 			int currentBacktrackedDepth = 0;
 
-			Scanner scanner = new Scanner(txtFile.toFile());
+			
+			try (Scanner scanner = new Scanner(txtFile.toFile());) { 
 			while (scanner.hasNextLine()) {
 				String line = scanner.nextLine();
 				String header;
@@ -76,9 +77,21 @@ public class CopyCompleteResults {
 					maxDepth = Math.max(maxDepth, Integer.parseInt(depth));
 				} else if (!line.isEmpty() && Character.isDigit(line.charAt(0))) {
 					JSONArray result = new JSONArray("[" + line + "]");
+					// Bug in GPU getState() leads to reversed state codes
+					/*if (entry.getString("executor").equals("GPU")) {
+						for (int i = 0; i < result.length(); i++) {
+							String code = result.getInt(i) + "";
+							// Pad to 9 digits
+							while (code.length() < 9) code = "0" + code;
+							// Reverse the code
+							code = new StringBuilder(code).reverse().toString();
+							result.put(i, Integer.parseInt(code));
+						}
+					}*/
 					String key = currentBacktrackedDepth + "";
 					resultMap.put(key, result);
 				}
+			}
 			}
 
 			entry.put("maxDepth", maxDepth);
@@ -92,7 +105,6 @@ public class CopyCompleteResults {
 			} else {
 				System.out.println("Incomplete: " + txtFile.getFileName());
 			}
-			scanner.close();
 		}
 
 		Path dest = src.resolve("results.json");
