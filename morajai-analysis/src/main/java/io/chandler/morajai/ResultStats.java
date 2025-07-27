@@ -17,6 +17,8 @@ public class ResultStats {
 	public static void main(String[] args) throws Exception {
 		Path resultsFile = Paths.get("results/v3", "results.json");
 
+		int depthRange = 5; // Return results at [MAX - depthRange, MAX]
+
 		int numCPU = 0;
 		int numGPU = 0;
 		int noResults = 0;
@@ -24,11 +26,64 @@ public class ResultStats {
 		ArrayList<String> maxDepthNames = new ArrayList<>();
 
 		BiFunction<JsonArray, HashSet<String>, Boolean> filter = (data, colors) -> {
-			// return colors.contains("PI"); // 388_C_GY_C_BK_C_BU_C_BU - Experimental 1
-			// return !colors.contains("BK") && !colors.contains("GN") && !colors.contains("RD"); - Experimental 4
+			// Grey mechanic
+			boolean middleColGn = data.get(1).asString().equals("GN") || data.get(4).asString().equals("GN") || data.get(7).asString().equals("GN");
+			boolean middleColYe = data.get(1).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(7).asString().equals("YE");
+			boolean middleColBu = data.get(1).asString().equals("BU") || data.get(4).asString().equals("BU") || data.get(7).asString().equals("BU");
+			boolean middleColPu = data.get(1).asString().equals("PU") || data.get(4).asString().equals("PU") || data.get(7).asString().equals("PU");
+			
+			boolean twoPurplesInMiddle = (data.get(1).asString().equals("PU") && data.get(4).asString().equals("PU")) ||
+				(data.get(4).asString().equals("PU") && data.get(7).asString().equals("PU")) ||
+				(data.get(7).asString().equals("PU") && data.get(1).asString().equals("PU"));
+			
+			boolean twoYellowsInMiddle = (data.get(1).asString().equals("YE") && data.get(4).asString().equals("YE")) ||
+				(data.get(4).asString().equals("YE") && data.get(7).asString().equals("YE")) ||
+				(data.get(7).asString().equals("YE") && data.get(1).asString().equals("YE"));
+			
+			boolean twoGreensInMiddle = (data.get(1).asString().equals("GN") && data.get(4).asString().equals("GN")) ||
+				(data.get(4).asString().equals("GN") && data.get(7).asString().equals("GN")) ||
+				(data.get(7).asString().equals("GN") && data.get(1).asString().equals("GN"));
+			
+			boolean greyMechanic = middleColGn && middleColBu && (middleColPu || middleColYe);
+			greyMechanic |= twoPurplesInMiddle && middleColGn;
+			greyMechanic |= twoYellowsInMiddle && middleColGn;
+			greyMechanic |= twoGreensInMiddle && (middleColYe || middleColPu);
+
+			boolean yellowInMiddleBottom =
+				data.get(3).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(5).asString().equals("YE") ||
+				data.get(6).asString().equals("YE") || data.get(7).asString().equals("YE") || data.get(8).asString().equals("YE");
+			boolean putpleInTopMiddle =
+				data.get(0).asString().equals("PU") || data.get(1).asString().equals("PU") || data.get(2).asString().equals("PU") ||
+				data.get(3).asString().equals("PU") || data.get(4).asString().equals("PU") || data.get(5).asString().equals("PU");
+			
+
+			boolean blackOrRedWhite =  colors.contains("BK") || (colors.contains("RD") && colors.contains("WH"));
+			boolean buBkPuYeMechanic = colors.contains("BU") && blackOrRedWhite && yellowInMiddleBottom && putpleInTopMiddle;
+			
+			boolean result = true;
+
+			if (result && colors.contains("debug")) {
+				System.out.println("data: " + data);
+				System.out.println("twoPurplesInMiddle: " + twoPurplesInMiddle);
+				System.out.println("twoYellowsInMiddle: " + twoYellowsInMiddle);
+				System.out.println("twoGreensInMiddle: " + twoGreensInMiddle);
+				System.out.println("middleColGn: " + middleColGn);
+				System.out.println("middleColYe: " + middleColYe);
+				System.out.println("middleColBu: " + middleColBu);
+				System.out.println("yellowInMiddleBottom: " + yellowInMiddleBottom);
+				System.out.println("putpleInTopMiddle: " + putpleInTopMiddle);
+				System.out.println("greyMechanic: " + greyMechanic);
+				System.out.println("buPuYeMechanic: " + buBkPuYeMechanic);
+			}
+
+			return result;
+			
+
+			//return colors.contains("PI"); // 388_C_GY_C_BK_C_BU_C_BU - Experimental 1
+			//return !colors.contains("BK") && !colors.contains("GN") && !colors.contains("RD");// - Experimental 4
 			// return !colors.contains("BU"); - Experimental 3
 			// 4471_C_WH_C_WH_C_YE_C_RD - Experimental 4
-			return (!colors.contains("PU") || !colors.contains("YE")) && (!colors.contains("GN"));
+			//return (!colors.contains("PU") || !colors.contains("YE")) && (!colors.contains("GN"));
 		};
 
 		ArrayList<String> acceptedNames = new ArrayList<>();
@@ -77,6 +132,7 @@ public class ResultStats {
 					int resultAtMax = resultsAtMax.get(i).asInt();
 					// Convert int to colors
 					String stateJson = MJAnalysis.stateToJson(resultAtMax);
+
 					JsonArray stateJsonArray = JsonValue.readHjson(stateJson).asArray();
 					HashSet<String> colors = new HashSet<>();
 					for (int j = 0; j < stateJsonArray.size(); j++) {
@@ -84,11 +140,17 @@ public class ResultStats {
 						colors.add(color);
 					}
 
+					//if (depth == 69) {
+					//	colors.add("debug");
+					//}
 					if (filter.apply(stateJsonArray, colors)) {
 						acceptedResult = true;
-						if (depth >= acceptedValue) {
-							acceptedValue = depth;
+						if (depth >= acceptedValue - depthRange) {
+							acceptedValue = Math.max(acceptedValue, depth);
 							localResults.add(result.getInt("idx", 0) + result.getString("name", "") + " " + resultAtMax + " (" + depth + ")");
+						}
+						if (colors.contains("debug")) {
+							System.out.println(resultAtMax + " " + depth + " " + stateJsonArray);
 						}
 					}
 				}
@@ -100,12 +162,10 @@ public class ResultStats {
 				maxDepth = acceptedValue;
 				maxDepthNames.clear();
 				maxDepthNames.add(result.getInt("idx", 0) + result.getString("name", ""));
-				acceptedNames.clear();
-				acceptedNames.addAll(localResults);
 			} else if (acceptedValue == maxDepth) {
 				maxDepthNames.add(result.getInt("idx", 0) + result.getString("name", ""));
-				acceptedNames.addAll(localResults);
 			}
+			acceptedNames.addAll(localResults);
 		}
 
 		System.out.println("Num CPU: " + numCPU);
@@ -115,8 +175,20 @@ public class ResultStats {
 		System.out.println("Max depth names: " + maxDepthNames);
 
 		Collections.sort(acceptedNames);
+
+
 		for (String name : acceptedNames) {
-			System.out.println(name);
+			boolean print = false;
+			int curDepth = maxDepth;
+			for (int i = 0; i < depthRange; i++) {
+
+				if (name.endsWith("(" + curDepth + ")")) print = true;
+				curDepth--;
+			}
+
+			if (print) System.out.println(name);
+
 		}
+		
 	}
 }

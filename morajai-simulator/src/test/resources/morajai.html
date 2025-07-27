@@ -147,6 +147,7 @@
                 puzzleColors.unshift(colorEnum[digit]);
                 state = Math.floor(state / 10);
             }
+            puzzleColors.reverse();
 
             // Set the fields
             document.getElementById('resultId').value = id;
