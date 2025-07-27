@@ -39,6 +39,8 @@ class MoraJaiSimulator {
         this.targetTiles    = ["GY","GY","GY","GY","GY","GY","GY","GY"];
         this.activeStickers = ["GY","GY","GY","GY","GY","GY","GY","GY","GY","0","0","0","0"];
 
+        this.svgOverlayName = canvasId + "-svg-overlay";
+
         this.PRESS_OK = 0; this.PRESS_RESET = 1; this.PRESS_COMPLETED = 2;
 
     }
@@ -163,10 +165,10 @@ class MoraJaiSimulator {
     }
 
     updateClickableOverlay() {
-        let overlay = document.getElementById('svg-overlay');
+        let overlay = document.getElementById(this.svgOverlayName);
         if (!overlay) {
             overlay = document.createElement('div');
-            overlay.id = 'svg-overlay';
+            overlay.id = this.svgOverlayName;
             Object.assign(overlay.style, { position: 'absolute', zIndex: "10", pointerEvents: "none" });
             this.canvas.parentElement.appendChild(overlay);
         }
@@ -202,12 +204,12 @@ class MoraJaiSimulator {
     
     wasm_init() {
         let initStr = `${this.targetColors.join(',')}_${this.targetTiles.join(',')}_${this.activeStickers.slice(0,9).join(',')}`;
-        window.morajai_module.ccall('init_from_string', 'number', ['string'], [initStr]);
+        this.morajai_module.ccall('init_from_string', 'number', ['string'], [initStr]);
     }
     
-    get_state() { return window.morajai_module.UTF8ToString(window.morajai_module.ccall('get_state', 'number', [], [])); }
-    press_tile(idx) { return window.morajai_module._wasm_press_tile(idx); }
-    press_outer(idx) { return window.morajai_module._wasm_press_outer(idx); }
+    get_state() { return this.morajai_module.UTF8ToString(this.morajai_module.ccall('get_state', 'number', [], [])); }
+    press_tile(idx) { return this.morajai_module._wasm_press_tile(idx); }
+    press_outer(idx) { return this.morajai_module._wasm_press_outer(idx); }
 
     updateState(ret = 0) {
         const [tiles, outers] = this.get_state().split('_');
@@ -233,7 +235,7 @@ class MoraJaiSimulator {
     
     onSVGLoad() {
         MoraJaiWasm().then(Module => {
-            window.morajai_module = Module;
+            this.morajai_module = Module;
             this.wasm_init();
             this.updateState();
             this.render("");
@@ -248,7 +250,7 @@ class MoraJaiSimulator {
         this.targetTiles = stickers.slice(0, 9);
         this.activeStickers.splice(0, stickers.length, ...stickers);
         
-        if (window.morajai_module) {
+        if (this.morajai_module) {
             this.wasm_init();
             this.updateState();
         }
