@@ -13,9 +13,10 @@ void initFromState(int state, int* tileColors) {
 
 inline int getState(int* tileColors) {
     int s = 0;
-#pragma unroll
-    for (int i = 8; i >= 0; --i) {
-        s = mad24(s, 10, tileColors[i]); // s = s*10 + digit
+    int multiplier = 1;
+    for (int i = 0; i < 9; ++i) {
+        s += tileColors[i] * multiplier;
+        multiplier *= 10;
     }
     return s;
 }
