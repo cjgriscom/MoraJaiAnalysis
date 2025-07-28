@@ -405,12 +405,12 @@ public class MJAnalysis {
 		}
 
 		int skipTo = Integer.parseInt(cmd.getOptionValue("skipTo", "0"));
-		int numGPUThreads = Integer.parseInt(cmd.getOptionValue("numGpuThreads", "3"));
-		int gpuPrunerThreads = Integer.parseInt(cmd.getOptionValue("gpuPrunerThreads", "0"));
-		int numCPUThreads = Integer.parseInt(cmd.getOptionValue("numCpuThreads", "2"));
-		int numInnerThreads = Integer.parseInt(cmd.getOptionValue("numCpuInnerThreads", "7"));
+		int numGPUThreads = Integer.parseInt(cmd.getOptionValue("numGpuThreads", "4"));
+		int gpuPrunerThreads = Integer.parseInt(cmd.getOptionValue("gpuPrunerThreads", "16"));
+		int numCPUThreads = Integer.parseInt(cmd.getOptionValue("numCpuThreads", "0"));
+		int numInnerThreads = Integer.parseInt(cmd.getOptionValue("numCpuInnerThreads", "8"));
 		boolean noBlue = Boolean.parseBoolean(cmd.getOptionValue("noBlue", "false"));
-		Path storageDir = Paths.get(cmd.getOptionValue("storageDir", "morajai_depths"));
+		Path storageDir = Paths.get(cmd.getOptionValue("storageDir", "results"));
 
 		if (noBlue && gpuPrunerThreads == 0 && numGPUThreads > 0) {
 			System.err.println("GPU pruner is required for noBlue");
