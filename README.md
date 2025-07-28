@@ -16,8 +16,9 @@ The output is split into 10,000 text files which can be parsed and processed usi
 
 ## morajai-analysis
 
-`CopyCompleteResults.java` - Consolidate the .txt files into JSON format
-`ResultFilter.java` - File through the JSON to extract states with the desired characteristics
+ * `CopyCompleteResults.java` - Consolidate the .txt files into JSON format
+ * `ResultFilter.java` - File through the JSON to extract states with the desired characteristics
+ * `ResultStatistics.java` - General stats calculator
 
 ## morajai-simulator
 
