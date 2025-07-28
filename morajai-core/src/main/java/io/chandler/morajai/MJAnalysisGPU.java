@@ -206,7 +206,7 @@ public class MJAnalysisGPU {
 						long[] maxWorkGroupSize = new long[1];
 						CL.clGetDeviceInfo(device, CL.CL_DEVICE_MAX_WORK_GROUP_SIZE, Sizeof.size_t, Pointer.to(maxWorkGroupSize), null);
 						if (!QUIET) System.out.println("Max work group size for device: " + maxWorkGroupSize[0]);
-						for (int i = (int)maxWorkGroupSize[0]; i >= 64; i /= 2) {
+						for (int i = (int)Math.min(512, maxWorkGroupSize[0]); i >= 32; i /= 2) { // > 512 doesn't divide evenly
 							workGroupSizes.add(i);
 						}
 						probeBestTime = true;
@@ -216,6 +216,8 @@ public class MJAnalysisGPU {
 
 					long[] nextClone = null;
 
+					// Theoretically smaller work groups would be best because the kernel execution time can vary significantly
+					//    but check for the best average time
 					while (!workGroupSizes.isEmpty()) {
 						int WGS = workGroupSizes.poll();
 
@@ -263,7 +265,7 @@ public class MJAnalysisGPU {
 								workGroupTimes.put(WGS, times);
 							}
 							times.add(time);
-							if (times.size() < 3) {
+							if (times.size() < 4) {
 								// Add another to queue
 								workGroupSizes.add(WGS);
 							}
@@ -276,6 +278,8 @@ public class MJAnalysisGPU {
 							if (workGroupSizes.isEmpty()) {
 								for (Map.Entry<Integer, ArrayList<Long>> entry : workGroupTimes.entrySet()) {
 									times = entry.getValue();
+									// remove oldest entry - there seems to be a startup cost that skews averages
+									times.remove(0);
 									if (times == null || times.isEmpty()) continue;
 									// average
 									long avg = 0;
