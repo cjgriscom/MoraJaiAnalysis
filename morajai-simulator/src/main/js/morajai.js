@@ -117,7 +117,7 @@ class MoraJaiSimulator {
     }
     
     render(text = null) {
-        if (text !== null) window.render_text = text;
+        if (text !== null) this.render_text = text;
 
         Object.keys(this.stickerBBox).forEach((key, i) => this.setPathColor(key, this.colors[this.activeStickers[i]]));
 
@@ -154,13 +154,13 @@ class MoraJaiSimulator {
             img.onload = () => {
                 this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                 URL.revokeObjectURL(url);
-                if (window.render_text) fillText(window.render_text);
+                if (this.render_text) fillText(this.render_text);
                 else this.updateClickableOverlay();
             };
             img.src = url;
         } else {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            if (window.render_text) fillText(window.render_text);
+            if (this.render_text) fillText(this.render_text);
         }
     }
 
