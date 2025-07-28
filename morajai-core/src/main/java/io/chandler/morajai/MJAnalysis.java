@@ -326,29 +326,6 @@ public class MJAnalysis {
 		return getBox(state).areInnerMatchingOuter();
 	}
 
-	private static List<Integer> buildPurpleAndYellowPool(int startpoint) {
-		List<Integer> pool = new ArrayList<>();
-		int idx = -1;
-		for (Color a : Color.values()) {
-			for (Color b : Color.values()) {
-				for (Color c : Color.values()) {
-					for (Color d : Color.values()) {
-						idx++;
-						if (a != C_YE && b != C_YE && c != C_YE && d != C_YE) continue;
-						if (a != C_PU && b != C_PU && c != C_PU && d != C_PU) continue;
-
-						if (idx < startpoint) {
-							continue;
-						}
-
-						pool.add(idx);
-					}
-				}
-			}
-		}
-		return pool;
-	}
-
 	private static List<Integer> buildSeededPool(int seed) {
 		List<Integer> pool = new ArrayList<>();
 		for (int i = 0; i < 10000; i++) {
@@ -390,6 +367,10 @@ public class MJAnalysis {
 		storageDirOption.setRequired(false);
 		options.addOption(storageDirOption);
 
+		Option reportStatesOption = new Option("r", "reportStates", true, "Export tile configuration for depths with > r states (default 2000)");
+		reportStatesOption.setRequired(false);
+		options.addOption(reportStatesOption);
+
 		CommandLineParser parser = new DefaultParser();
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLine cmd;
@@ -411,6 +392,8 @@ public class MJAnalysis {
 		int numInnerThreads = Integer.parseInt(cmd.getOptionValue("numCpuInnerThreads", "8"));
 		boolean noBlue = Boolean.parseBoolean(cmd.getOptionValue("noBlue", "false"));
 		Path storageDir = Paths.get(cmd.getOptionValue("storageDir", "results"));
+		int reportStates = Integer.parseInt(cmd.getOptionValue("reportStates", "2000"));
+		MJDepthsBacktracker.THRESHOLD = reportStates;
 
 		if (noBlue && gpuPrunerThreads == 0 && numGPUThreads > 0) {
 			System.err.println("GPU pruner is required for noBlue");

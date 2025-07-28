@@ -8,7 +8,7 @@ import io.chandler.morajai.MJAnalysis.DepthTracker;
 
 public class MJDepthsBacktracker {
 
-	private static final int THRESHOLD = 2000;
+	public static int THRESHOLD = 2000;
 
 	private final MoraJaiBox.Color[] targetColors;
 	{
