@@ -16,6 +16,7 @@ import org.json.JSONObject;
 
 public class CopyCompleteResults {
 	public static void main(String[] args) throws Exception {
+		boolean includeResultMap = true;
 		Path src = Paths.get("results/v3");
 		System.out.println(src.toAbsolutePath());
 
@@ -24,7 +25,7 @@ public class CopyCompleteResults {
 		Files.walk(src)
 			.filter(Files::isRegularFile)
 			.filter(path -> path.getFileName().toString().endsWith(".txt"))
-			//.filter(path -> path.getFileName().toString().contains("4954"))
+			//.filter(path -> path.getFileName().toString().contains("4954")) // Test
 			.forEach(txtFiles::add);
 
 		TreeMap<Integer, JSONObject> results = new TreeMap<>();
@@ -77,19 +78,8 @@ public class CopyCompleteResults {
 					maxDepth = Math.max(maxDepth, Integer.parseInt(depth));
 				} else if (!line.isEmpty() && Character.isDigit(line.charAt(0))) {
 					JSONArray result = new JSONArray("[" + line + "]");
-					// Bug in GPU getState() leads to reversed state codes
-					/*if (entry.getString("executor").equals("GPU")) {
-						for (int i = 0; i < result.length(); i++) {
-							String code = result.getInt(i) + "";
-							// Pad to 9 digits
-							while (code.length() < 9) code = "0" + code;
-							// Reverse the code
-							code = new StringBuilder(code).reverse().toString();
-							result.put(i, Integer.parseInt(code));
-						}
-					}*/
 					String key = currentBacktrackedDepth + "";
-					resultMap.put(key, result);
+					if (includeResultMap) resultMap.put(key, result);
 				}
 			}
 			}
@@ -97,7 +87,7 @@ public class CopyCompleteResults {
 			entry.put("maxDepth", maxDepth);
 			entry.put("sizeMap", sizeMap);
 			entry.put("backtrackedSizeMap", backtrackedSizeMap);
-			entry.put("resultMap", resultMap);
+			if (includeResultMap) entry.put("resultMap", resultMap);
 
 			if (iscomplete) {
 				results.put(entry.getInt("idx"), entry);
@@ -107,7 +97,7 @@ public class CopyCompleteResults {
 			}
 		}
 
-		Path dest = src.resolve("results.json");
+		Path dest = src.resolve("results" + (includeResultMap ? "": "-no-result-map") + ".json");
 		FileWriter fileWriter = new FileWriter(dest.toFile());
 		String delim = "{\n";
 

@@ -95,6 +95,9 @@ public class ResultStats {
 					new FileReader(resultsFile.toFile()), 1024*1024*10)).asObject();
 
 		for (String key : results.names()) {
+			if (!key.equals("5566")) {
+				continue;
+			}
 			JsonObject result = results.get(key).asObject();
 
 			String executor = result.getString("executor", "");

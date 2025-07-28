@@ -405,7 +405,7 @@ public class MJAnalysisGPU {
 				try {
 					MJAnalysisGPU analysis = new MJAnalysisGPU(Paths.get("morajai_gpu_depths"), false);
 					/*if (idx > 0)*/ analysis.enablePrune(pruneExecutor);
-					analysis.fullDepthAnalysis(new Color[] {C_WH, C_WH, C_YE, C_RD}, 4471, (stats) -> {
+					analysis.fullDepthAnalysis(new Color[] {C_OR, C_OR, C_OR, C_OR}, 9999, (stats) -> {
 						System.out.println(stats.filename + " " + stats.depth + " " + stats.statesAtDepth + " " + stats.unreached);
 					});
 				} catch (Exception e) {
