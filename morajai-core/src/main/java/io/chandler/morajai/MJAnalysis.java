@@ -126,8 +126,12 @@ public class MJAnalysis {
 			statsUpdate.accept(stats);
 
 
-			int prunedDead = MJColorPrune.prune(executor, noBlue, targetColors, (state) -> {
-				depths.markDead(state);
+			int prunedDead = MJColorPrune.prune(executor, noBlue, targetColors, (states) -> {
+				synchronized (depths) {
+					for (int state : states) {
+						depths.markDead(state);
+					}
+				}
 			});
 			stats.initalPruned = prunedDead;
 			stats.dead = prunedDead;

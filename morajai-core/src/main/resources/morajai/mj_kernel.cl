@@ -179,26 +179,34 @@ __kernel void mj_solve(
     __global const uchar* reached,
     __global const uchar* current,
     __global uchar* next,
-    const int offset
+    const int chunkSize
 ) {
-    int state = get_global_id(0) + offset;
 
-    if (isSet(reached, state) || isSet(current, state)) {
-        return;
-    }
+    int global_id = get_global_id(0);
+    int global_work_size = 1000000000/chunkSize;
 
     int tileColors[9];
     int initTileColors[9];
-    initFromState(state, initTileColors);
+    
+    for (int i = 0; i < chunkSize; i++) {
+        int state = global_id + i*global_work_size;
+        if (state >= 1000000000) break;
 
-    for (int i = 0; i < 9; i++) {
-        for (int j=0; j<9; j++) tileColors[j] = initTileColors[j];
-        pressTile(i, tileColors);
-        int newState = getState(tileColors);
+        if (isSet(reached, state) || isSet(current, state)) {
+            continue;
+        }
 
-        if (isSet(current, newState)) {
-            set(next, state);
-            return;
+        initFromState(state, initTileColors);
+
+        for (int i = 0; i < 9; i++) {
+            for (size_t j = 0; j < 9; j++) tileColors[j] = initTileColors[j];
+            pressTile(i, tileColors);
+            int newState = getState(tileColors);
+
+            if (isSet(current, newState)) {
+                set(next, state);
+                break;
+            }
         }
     }
 } 

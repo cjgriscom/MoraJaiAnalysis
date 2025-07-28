@@ -167,8 +167,12 @@ public class MJAnalysisGPU {
 				if (pruneExecutor != null) {
 					stats.pruning = true;
 					statsUpdate.accept(stats);
-					int prunedDead = MJColorPrune.prune(pruneExecutor, noBlue, targetColors, (state) -> {
-						set(reached, state);
+					int prunedDead = MJColorPrune.prune(pruneExecutor, noBlue, targetColors, (states) -> {
+						synchronized (reached) {
+							for (int state : states) {
+								set(reached, state);
+							}
+						}
 					});
 					stats.initalPruned = prunedDead;
 					stats.dead = prunedDead;
@@ -206,7 +210,7 @@ public class MJAnalysisGPU {
 						long[] maxWorkGroupSize = new long[1];
 						CL.clGetDeviceInfo(device, CL.CL_DEVICE_MAX_WORK_GROUP_SIZE, Sizeof.size_t, Pointer.to(maxWorkGroupSize), null);
 						if (!QUIET) System.out.println("Max work group size for device: " + maxWorkGroupSize[0]);
-						for (int i = (int)Math.min(512, maxWorkGroupSize[0]); i >= 32; i /= 2) { // > 512 doesn't divide evenly
+						for (int i = (int)maxWorkGroupSize[0]; i >= 32; i /= 2) {
 							workGroupSizes.add(i);
 						}
 						probeBestTime = true;
@@ -234,15 +238,13 @@ public class MJAnalysisGPU {
 							CL.clEnqueueWriteBuffer(commandQueue, memObjects[1], CL.CL_TRUE, 0, current.length * Sizeof.cl_long, Pointer.to(current), 0, null, null);
 							CL.clEnqueueFillBuffer(commandQueue, memObjects[2], Pointer.to(new byte[]{0}), 1, 0, next.length * Sizeof.cl_long, 0, null, null);
 							
-
 							// Execute kernel
-							int gpuChunkSize = 1_000_000_000;
-							for (int i = 0; i < 1_000_000_000; i += gpuChunkSize) {
-								CL.clSetKernelArg(kernel, 3, Sizeof.cl_int, Pointer.to(new int[]{i}));
-								long global_work_size[] = new long[]{gpuChunkSize};
-								long local_work_size[] = new long[]{WGS};
-								CL.clEnqueueNDRangeKernel(commandQueue, kernel, 1, null, global_work_size, local_work_size, 0, null, null);
-							}
+							int chunkSize = 50; // Seems optimal based on quick benchmarks
+							int globalWorkSize = (int)(Math.ceil(1_000_000_000.0 / chunkSize / WGS) * WGS);
+							CL.clSetKernelArg(kernel, 3, Sizeof.cl_int, Pointer.to(new int[]{chunkSize}));
+							long global_work_size[] = new long[]{globalWorkSize};
+							long local_work_size[] = new long[]{WGS};
+							CL.clEnqueueNDRangeKernel(commandQueue, kernel, 1, null, global_work_size, local_work_size, 0, null, null);
 							
 							// Read back results
 							CL.clEnqueueReadBuffer(commandQueue, memObjects[2], CL.CL_TRUE, 0, next.length * Sizeof.cl_long, Pointer.to(next), 0, null, null);
@@ -404,12 +406,12 @@ public class MJAnalysisGPU {
 		ExecutorService pruneExecutor = Executors.newWorkStealingPool(16);
 
 		for (int i = 0; i <1; i++) {
-			final int idx = i;
+			//final int idx = i;
 			executor.submit(() -> {
 				try {
-					MJAnalysisGPU analysis = new MJAnalysisGPU(Paths.get("morajai_gpu_depths"), false);
+					MJAnalysisGPU analysis = new MJAnalysisGPU(Paths.get("results/morajai_gpu_depths"), false);
 					/*if (idx > 0)*/ analysis.enablePrune(pruneExecutor);
-					analysis.fullDepthAnalysis(new Color[] {C_OR, C_OR, C_OR, C_OR}, 9999, (stats) -> {
+					analysis.fullDepthAnalysis(new Color[] {C_PU, C_PU, C_PU, C_PU}, 6666, (stats) -> {
 						System.out.println(stats.filename + " " + stats.depth + " " + stats.statesAtDepth + " " + stats.unreached);
 					});
 				} catch (Exception e) {

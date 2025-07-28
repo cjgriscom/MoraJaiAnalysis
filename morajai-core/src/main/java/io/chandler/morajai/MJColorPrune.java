@@ -4,6 +4,8 @@ import static io.chandler.morajai.MoraJaiBox.Color.*;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -23,7 +25,7 @@ public class MJColorPrune {
 	private static final int whiteOrd = C_WH.ordinal();
 	private static final int grayOrd = C_GY.ordinal();
 
-	public static int prune(ExecutorService executor, boolean noBlue, Color[] targetColors, Consumer<Integer> markDead) {
+	public static int prune(ExecutorService executor, boolean noBlue, Color[] targetColors, Consumer<List<Integer>> markDead) {
 
 		int prunedDead = 0;
 	
@@ -159,15 +161,23 @@ public class MJColorPrune {
 
 
 				int countSetBits = 0;
-				synchronized (updateLock) {
-					// Iterate over all set bits
-					for (int i = states.nextSetBit(0); i >= 0; i = states.nextSetBit(i+1)) {
-						markDead.accept(i + startState);
-						countSetBits++;
+				List<Integer> deadStates = new ArrayList<>(1024);
+
+				// Iterate over all set bits
+				for (int i = states.nextSetBit(0); i >= 0; i = states.nextSetBit(i+1)) {
+					countSetBits++;
+					deadStates.add(i + startState);
+					if (deadStates.size() >= 1024) {
+						synchronized (updateLock) {
+							markDead.accept(deadStates);
+						}
+						deadStates.clear();
 					}
+				}
+
+				synchronized (updateLock) {
+					markDead.accept(deadStates);
 					atomicDeadStatesCount.addAndGet(countSetBits);
-	
-					// Important that this happens last
 					atomicProgressCount.addAndGet(localProgressCount);
 				}
 			});
