@@ -62,14 +62,14 @@ public class MJColorPrune {
 						if (cnt[whiteOrd] == 0) states.set(state-startState);
 					}
 					if ((targetColorCount = countTarget(targetColors, C_GY)) != 0 || containsWhite) {
-						int greysAndWhites = cnt[grayOrd] + cnt[whiteOrd];
-						if (greysAndWhites == 0) {
+						int graysAndWhites = cnt[grayOrd] + cnt[whiteOrd];
+						if (graysAndWhites == 0) {
 							states.set(state-startState);
-						} else if (greysAndWhites < targetColorCount) {
+						} else if (graysAndWhites < targetColorCount) {
 							// Orange and blue can both generate more white/gry
 							if (	cnt[orangeOrd] +
 										cnt[blueOrd] +
-										greysAndWhites
+										graysAndWhites
 										< targetColorCount) {
 								states.set(state-startState);
 							}
@@ -88,7 +88,7 @@ public class MJColorPrune {
 						} else if (oranges == 1) {
 							if (targetColorCount != 1) states.set(state-startState); 
 						} else if (oranges < targetColorCount) {
-							// Sum blue and grey and white
+							// Sum blue and gray and white
 							int bgw = cnt[blueOrd] > 0 ? cnt[grayOrd] + cnt[blueOrd] + cnt[whiteOrd] : 0;
 							int black = cnt[redOrd] > 0 && cnt[blueOrd] > 0 ? cnt[blackOrd] : 0;
 							// Simplified but good enough
@@ -108,8 +108,8 @@ public class MJColorPrune {
 							if (reds < targetColorCount) {
 								// Not enough red, for simplicity just sum all morphing combos
 								int orangeBluesBlack = cnt[orangeOrd] + cnt[blueOrd] + cnt[blackOrd];
-								int whitesAndGreys = cnt[whiteOrd] + cnt[grayOrd];
-								if (orangeBluesBlack + whitesAndGreys + reds < targetColorCount) {
+								int whitesAndGrays = cnt[whiteOrd] + cnt[grayOrd];
+								if (orangeBluesBlack + whitesAndGrays + reds < targetColorCount) {
 									states.set(state-startState);
 								}
 							}
@@ -126,8 +126,8 @@ public class MJColorPrune {
 						} else {
 							// For simplicity just sum all morphing combos
 							int orangeBluesBlack = cnt[orangeOrd] + cnt[blueOrd] + cnt[blackOrd];
-							int whitesAndGreys = cnt[whiteOrd] + cnt[grayOrd];
-							if (orangeBluesBlack + whitesAndGreys < targetColorCount) {
+							int whitesAndGrays = cnt[whiteOrd] + cnt[grayOrd];
+							if (orangeBluesBlack + whitesAndGrays < targetColorCount) {
 								states.set(state-startState);
 							}
 						}
@@ -135,18 +135,18 @@ public class MJColorPrune {
 
 					// Blue is also complicated
 					if ((targetColorCount = countTarget(targetColors, C_BU)) != 0) {
-						// Sum blue, orange, white, grey
+						// Sum blue, orange, white, gray
 						int blue = cnt[blueOrd];
-						int whiteGrey = cnt[whiteOrd] + cnt[grayOrd];
+						int whiteGray = cnt[whiteOrd] + cnt[grayOrd];
 						int orange = cnt[orangeOrd];
 
 						if (reds == 0) {
-							if (blue + whiteGrey + orange < targetColorCount) {
+							if (blue + whiteGray + orange < targetColorCount) {
 								states.set(state-startState);
 							}
 						} else {
 							int black = cnt[blackOrd];
-							if (black + blue + whiteGrey + orange < targetColorCount) {
+							if (black + blue + whiteGray + orange < targetColorCount) {
 								states.set(state-startState);
 							}
 
@@ -213,11 +213,11 @@ public class MJColorPrune {
 				// targetColorCount must be 2+
 				int oranges = cnt[orangeOrd];
 				int blues = cnt[blueOrd];
-				int whitesAndGreysMinus2 = Math.max(0, cnt[whiteOrd] + cnt[grayOrd] - 2);
+				int whitesAndGraysMinus2 = Math.max(0, cnt[whiteOrd] + cnt[grayOrd] - 2);
 				if (basics < 2
 						|| oranges == 0
 						|| (oranges +
-							blues + whitesAndGreysMinus2 +
+							blues + whitesAndGraysMinus2 +
 							basics)
 							< targetColorCount) {
 					return true;

@@ -31,11 +31,24 @@
   
   <build>
     <plugins>
+      <!-- Compile the Java tools -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <release>${jar.java.release}</release>
+          <source>${jar.java.source}</source>
+          <target>${jar.java.target}</target>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.3.0</version>
         <executions>
+          <!-- Embed the SVG into JS with the included tool -->
           <execution>
             <id>convert-svg-to-js</id>
             <phase>prepare-package</phase>
@@ -51,6 +64,7 @@
               </arguments>
             </configuration>
           </execution>
+          <!-- Build the WASM module using emcc on classpath -->
           <execution>
             <id>build-wasm</id>
             <phase>prepare-package</phase>
@@ -58,10 +72,23 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>sh</executable>
+              <executable>emcc</executable>
               <arguments>
-                <argument>-c</argument>
-                <argument>${project.basedir}/src/main/c/build_wasm.sh</argument>
+                <argument>src/main/c/morajai.c</argument>
+                <argument>src/main/c/emscripten_entry.c</argument>
+                <argument>-O3</argument>
+                <argument>--closure=1</argument>
+                <argument>--minify=0</argument>
+                <argument>-I</argument><argument>src/main/c/morajai</argument>
+                <argument>-s</argument><argument>WASM=1</argument>
+                <argument>-s</argument><argument>MODULARIZE=1</argument>
+                <argument>-s</argument><argument>EXPORT_ES6=1</argument>
+                <argument>-s</argument><argument>SINGLE_FILE=1</argument>
+                <argument>-s</argument><argument>ENVIRONMENT=web</argument>
+                <argument>-s</argument><argument>EXPORT_NAME="MoraJaiWasm"</argument>
+                <argument>-s</argument><argument>EXPORTED_FUNCTIONS=['_init_from_string','_wasm_press_tile','_wasm_press_outer','_get_state']</argument>
+                <argument>-s</argument><argument>EXPORTED_RUNTIME_METHODS=['ccall','UTF8ToString']</argument>
+                <argument>-o</argument><argument>target/js/morajai_wasm.js</argument>
               </arguments>
             </configuration>
           </execution>
@@ -92,13 +119,14 @@
         </executions>
       </plugin>
 
+      <!-- Bundle it all together -->
       <plugin>
 				<groupId>com.github.blutorange</groupId>
 				<artifactId>closure-compiler-maven-plugin</artifactId>
 				<version>2.32.0</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
-					<baseTargetDir>${project.build.directory}/js_out</baseTargetDir>
+					<baseTargetDir>${project.build.directory}/classes</baseTargetDir>
 					<closureLanguageOut>ECMASCRIPT_2018</closureLanguageOut>
 				</configuration>
 				<executions>

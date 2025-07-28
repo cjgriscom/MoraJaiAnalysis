@@ -34,7 +34,7 @@ static color_t code_to_color(const char *code)
             return (color_t)i;
         }
     }
-    // Default – grey, but ideally invalid input should be handled by caller
+    // Default – gray, but ideally invalid input should be handled by caller
     return C_GY;
 }
 

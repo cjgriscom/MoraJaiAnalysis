@@ -9,21 +9,16 @@
     <script>
 
         async function main() {
-
-            // Generate timestamp for cache busting
             const timestamp = new Date().getTime();
             const cacheBust = `?v=${timestamp}`;
 
-            // Dynamically import the bundled module and get the default export
-            await import(`./morajai-bundle.min.js${cacheBust}`);
+            await import(`/js/morajai-bundle.min.js${cacheBust}`);
 
             const MoraJaiSimulator = window['MoraJaiSimulator'];
             if (!MoraJaiSimulator) {
                 console.error("Failed to load MoraJaiSimulator class.");
                 return;
             }
-
-            // Instantiate here
 
             const initialSpoilerMode = false;
 
@@ -70,7 +65,6 @@
 </head>
 <body>
 
-
 <div class="row">
     <div class="col-5 p-2 position-relative">
         <div class="mb-3 d-flex">
@@ -83,6 +77,8 @@
         <canvas id="puzzle-canvas" class="w-100 p-0"></canvas>
     </div>
     <div class="col-7 p-2">
+        <p>Results look like this:</p>
+        <pre>1049_C_RD_C_GY_C_WH_C_OR 147983491 (67)</pre>
         <label for="resultList" class="form-label">Paste Result List Here:</label>
         <textarea id="resultList" class="form-control" rows="6" placeholder="Paste one result per line..."></textarea>
         <div class="d-flex align-items-center mt-2">
@@ -200,7 +196,6 @@
                 }
             });
 
-            // Initialize
             updatePaginator();
         })();
 

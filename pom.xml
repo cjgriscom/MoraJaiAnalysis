@@ -14,9 +14,9 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-		<jar.java.source>21</jar.java.source>
-		<jar.java.target>21</jar.java.target>
-		<jar.java.release>21</jar.java.release>
+		<jar.java.source>17</jar.java.source>
+		<jar.java.target>17</jar.java.target>
+		<jar.java.release>17</jar.java.release>
 	</properties>
 	
 

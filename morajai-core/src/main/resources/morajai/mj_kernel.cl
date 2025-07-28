@@ -44,7 +44,7 @@ int getOffsetColor(int* tileColors, int tile, int offsetX, int offsetY) {
 inline void pressTile(int tile, int* tileColors) {
     int tileColor = tileColors[tile];
 
-    /* BLUE tiles adopt the centre-tile’s colour when pressed */
+    /* BLUE tiles adopt the center-tile's color when pressed */
     if (tileColor == C_BU) {
         tileColor = tileColors[4];
     }
@@ -58,9 +58,9 @@ inline void pressTile(int tile, int* tileColors) {
         case C_RD:
             for (int i = 0; i < 9; i++) {
                 if (tileColors[i] == C_WH)
-                    tileColors[i] = C_BK;          /* white → black  */
+                    tileColors[i] = C_BK;          /* white -> black  */
                 else if (tileColors[i] == C_BK)
-                    tileColors[i] = tileColors[tile]; /* black → red */
+                    tileColors[i] = tileColors[tile]; /* black -> red */
             }
             break;
 
@@ -82,41 +82,41 @@ inline void pressTile(int tile, int* tileColors) {
         /* ──────────────────────────  WHITE  ───────────────────────── */
         case C_WH:
 #pragma unroll 4
-            for (int i = 0; i < 4; i++) {           /* N,S,E,W neighbours */
+            for (int i = 0; i < 4; i++) {           /* N,S,E,W neighbors */
                 int ox = (i == 0) ? -1 : (i == 1) ?  1 : 0;
                 int oy = (i == 2) ? -1 : (i == 3) ?  1 : 0;
                 int n  = getOffsetTileIdx(tile, ox, oy);
                 if (n != -1) {
                     if (tileColors[n] == C_GY)
-                        tileColors[n] = tileColors[tile];     /* gray → white */
+                        tileColors[n] = tileColors[tile];     /* gray -> white */
                     else if (tileColors[n] == tileColors[tile])
-                        tileColors[n] = C_GY;                 /* white → gray */
+                        tileColors[n] = C_GY;                 /* white -> gray */
                 }
             }
-            tileColors[tile] = C_GY;                 /* self becomes gray  */
+            tileColors[tile] = C_GY;                 /* self becomes gray */
             break;
 
         /* ──────────────────────────  PINK  ────────────────────────── */
         case C_PI: {
-            int neighbours[8];       /* clockwise list of valid neighbours */
+            int neighbors[8];       /* clockwise list of valid neighbors */
             int count = 0;
 
-            /* collect neighbours clockwise starting West */
-            int n = getOffsetTileIdx(tile, -1,  0); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile, -1,  1); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile,  0,  1); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile,  1,  1); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile,  1,  0); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile,  1, -1); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile,  0, -1); if (n != -1) neighbours[count++] = n;
-                n = getOffsetTileIdx(tile, -1, -1); if (n != -1) neighbours[count++] = n;
+            /* collect neighbors clockwise starting West */
+            int n = getOffsetTileIdx(tile, -1,  0); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile, -1,  1); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile,  0,  1); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile,  1,  1); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile,  1,  0); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile,  1, -1); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile,  0, -1); if (n != -1) neighbors[count++] = n;
+                n = getOffsetTileIdx(tile, -1, -1); if (n != -1) neighbors[count++] = n;
 
             /* clockwise rotation */
             if (count > 0) {
-                int tmp = tileColors[neighbours[0]];
+                int tmp = tileColors[neighbors[0]];
                 for (int i = 0; i < count - 1; i++)
-                    tileColors[neighbours[i]] = tileColors[neighbours[i + 1]];
-                tileColors[neighbours[count - 1]] = tmp;
+                    tileColors[neighbors[i]] = tileColors[neighbors[i + 1]];
+                tileColors[neighbors[count - 1]] = tmp;
             }
             break;
         }

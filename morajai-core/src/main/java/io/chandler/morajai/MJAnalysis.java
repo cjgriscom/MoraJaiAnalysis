@@ -108,8 +108,8 @@ public class MJAnalysis {
 		MJAnalysisStats stats = new MJAnalysisStats(idx, filename);
 		statsUpdate.accept(stats);
 		
-		try (ExecutorService executor = Executors.newFixedThreadPool(threads);  
-			 PrintStream out = new PrintStream(new File(storageDir.resolve("depths_v3_" + idx + filename + ".txt").toString()))) {
+		ExecutorService executor = Executors.newFixedThreadPool(threads); 
+		try (PrintStream out = new PrintStream(new File(storageDir.resolve("depths_v3_" + idx + filename + ".txt").toString()))) {
 			out.println("Starting analysis for " + idx + " " + filename + " with CPU - pruner: " + true);
 
 			MoraJaiBox box = new MoraJaiBox();
@@ -287,6 +287,8 @@ public class MJAnalysis {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			executor.shutdown();
 		}
 	}
 

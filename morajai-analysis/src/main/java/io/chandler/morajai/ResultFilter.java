@@ -13,7 +13,7 @@ import org.hjson.JsonArray;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 
-public class ResultStats {
+public class ResultFilter {
 	public static void main(String[] args) throws Exception {
 		Path resultsFile = Paths.get("results/v3", "results.json");
 
@@ -26,7 +26,7 @@ public class ResultStats {
 		ArrayList<String> maxDepthNames = new ArrayList<>();
 
 		BiFunction<JsonArray, HashSet<String>, Boolean> filter = (data, colors) -> {
-			// Grey mechanic
+			// Gray mechanic
 			boolean middleColGn = data.get(1).asString().equals("GN") || data.get(4).asString().equals("GN") || data.get(7).asString().equals("GN");
 			boolean middleColYe = data.get(1).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(7).asString().equals("YE");
 			boolean middleColBu = data.get(1).asString().equals("BU") || data.get(4).asString().equals("BU") || data.get(7).asString().equals("BU");
@@ -44,10 +44,10 @@ public class ResultStats {
 				(data.get(4).asString().equals("GN") && data.get(7).asString().equals("GN")) ||
 				(data.get(7).asString().equals("GN") && data.get(1).asString().equals("GN"));
 			
-			boolean greyMechanic = middleColGn && middleColBu && (middleColPu || middleColYe);
-			greyMechanic |= twoPurplesInMiddle && middleColGn;
-			greyMechanic |= twoYellowsInMiddle && middleColGn;
-			greyMechanic |= twoGreensInMiddle && (middleColYe || middleColPu);
+			boolean grayMechanic = middleColGn && middleColBu && (middleColPu || middleColYe);
+			grayMechanic |= twoPurplesInMiddle && middleColGn;
+			grayMechanic |= twoYellowsInMiddle && middleColGn;
+			grayMechanic |= twoGreensInMiddle && (middleColYe || middleColPu);
 
 			boolean yellowInMiddleBottom =
 				data.get(3).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(5).asString().equals("YE") ||
@@ -72,7 +72,7 @@ public class ResultStats {
 				System.out.println("middleColBu: " + middleColBu);
 				System.out.println("yellowInMiddleBottom: " + yellowInMiddleBottom);
 				System.out.println("putpleInTopMiddle: " + putpleInTopMiddle);
-				System.out.println("greyMechanic: " + greyMechanic);
+				System.out.println("grayMechanic: " + grayMechanic);
 				System.out.println("buPuYeMechanic: " + buBkPuYeMechanic);
 			}
 

@@ -145,7 +145,7 @@ void sub_press_pink(uint8_t tile) {
 	morajai_tile_colors[offset_tiles[total_tiles-1]] = temp;
 }
 void sub_press_white(uint8_t tile) {
-	// Invert (grey -> white, white -> grey) adjacent grey tiles and self
+	// Invert (gray -> white, white -> gray) adjacent gray tiles and self
 	int8_t offset_tiles[4] = {
 		get_offset_tile_idx(tile, -1,  0),
 		get_offset_tile_idx(tile,  1,  0),

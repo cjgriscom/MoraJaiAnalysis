@@ -256,7 +256,7 @@ public class MoraJaiBox {
 
 	private static final int[][] WHITE_OFFSETS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 	private void subPressWhite(int tile) {
-		// Invert (grey -> white, white -> grey) adjacent grey tiles and self
+		// Invert (gray -> white, white -> gray) adjacent gray tiles and self
 		int selfColor = tileColors[tile]; // C_WH, except use self to propagate blue behavior
 
 		for (int[] offset : WHITE_OFFSETS) {
