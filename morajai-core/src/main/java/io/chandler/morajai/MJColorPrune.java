@@ -34,6 +34,8 @@ public class MJColorPrune {
 		AtomicInteger atomicProgressCount = new AtomicInteger(0);
 		AtomicInteger atomicDeadStatesCount = new AtomicInteger(0);
 
+		Object updateLock = new Object();
+
 		for (int worker = 0; worker < numChunks; worker++) {
 			int chunkIndex = worker;
 			executor.submit(() -> {
@@ -155,17 +157,19 @@ public class MJColorPrune {
 				}
 
 
-				atomicProgressCount.addAndGet(localProgressCount);
 
 				int countSetBits = 0;
-				synchronized (markDead) {
+				synchronized (updateLock) {
 					// Iterate over all set bits
 					for (int i = states.nextSetBit(0); i >= 0; i = states.nextSetBit(i+1)) {
 						markDead.accept(i + startState);
 						countSetBits++;
 					}
+					atomicDeadStatesCount.addAndGet(countSetBits);
+	
+					// Important that this happens last
+					atomicProgressCount.addAndGet(localProgressCount);
 				}
-				atomicDeadStatesCount.addAndGet(countSetBits);
 			});
 		}
 
