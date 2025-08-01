@@ -50,7 +50,7 @@ It can be instantiated with this HTML (Bootstrap for GUI):
 </div>
 
 <script>
-  function main() {
+  function loadMJS() {
     // Load 
     const MoraJaiSimulator = window['MoraJaiSimulator'];
     if (!MoraJaiSimulator) {
@@ -75,30 +75,29 @@ It can be instantiated with this HTML (Bootstrap for GUI):
       // Called when the puzzle is solved - you must then call loadPuzzle(...) to reset it
     }
 
-    window.addEventListener('load', function() {
-      morajai_box = new MoraJaiSimulator(
-        "puzzle-canvas", // The canvas ID
-        initialSpoilerMode,
-        onResizeCanvas,
-        onUpdateState,
-        onSolved);
-      
-      document.getElementById('spoilerMode').addEventListener('click', function() {
-        var spoilerMode = document.getElementById('spoilerMode').checked;
-        morajai_box.setSpoilerMode(spoilerMode);
-        morajai_box.render();
-      });
-
-      // Use this to preload a saved state before calling start():
-      // morajai_box.setInitialState(targetColors, targetTiles, activeStickers);
-
-      morajai_box.start(); // Call this only once
-
-      morajai_box.loadPuzzle(["WH","WH","WH","WH","BK","BK","BK","BK","WH"], ["WH","WH","BK","WH"]);
+    morajai_box = new MoraJaiSimulator(
+      "puzzle-canvas", // The canvas ID
+      initialSpoilerMode,
+      onResizeCanvas,
+      onUpdateState,
+      onSolved);
+    
+    document.getElementById('spoilerMode').addEventListener('click', function() {
+      var spoilerMode = document.getElementById('spoilerMode').checked;
+      morajai_box.setSpoilerMode(spoilerMode);
+      morajai_box.render();
     });
+
+    // Use this to preload a saved state before calling start():
+    // morajai_box.setInitialState(targetColors, targetTiles, activeStickers);
+
+    morajai_box.start(); // Call this only once
+
+    morajai_box.loadPuzzle(["WH","WH","WH","WH","BK","BK","BK","BK","WH"], ["WH","WH","BK","WH"]);
+
   }
 
-  document.addEventListener('DOMContentLoaded', main);
+  document.addEventListener('DOMContentLoaded', loadMJS);
 
 </script>
 ```
