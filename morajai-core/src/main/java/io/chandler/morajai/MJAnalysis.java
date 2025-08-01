@@ -332,9 +332,10 @@ public class MJAnalysis {
 		return getBox(state).areInnerMatchingOuter();
 	}
 
-	private static List<Integer> buildSeededPool(int seed) {
+	private static List<Integer> buildSeededPool(boolean noBlue, int seed) {
 		List<Integer> pool = new ArrayList<>();
 		for (int i = 0; i < 10000; i++) {
+			if (noBlue && (""+i).contains(""+C_BU.ordinal())) continue;
 			pool.add(i);
 		}
 		Collections.shuffle(pool, new Random(seed));
@@ -396,7 +397,7 @@ public class MJAnalysis {
 		int gpuPrunerThreads = Integer.parseInt(cmd.getOptionValue("gpuPrunerThreads", "16"));
 		int numCPUThreads = Integer.parseInt(cmd.getOptionValue("numCpuThreads", "0"));
 		int numInnerThreads = Integer.parseInt(cmd.getOptionValue("numCpuInnerThreads", "8"));
-		boolean noBlue = Boolean.parseBoolean(cmd.getOptionValue("noBlue", "false"));
+		boolean noBlue = cmd.hasOption("noBlue");
 		Path storageDir = Paths.get(cmd.getOptionValue("storageDir", "results"));
 		int reportStates = Integer.parseInt(cmd.getOptionValue("reportStates", "2000"));
 		MJDepthsBacktracker.THRESHOLD = reportStates;
@@ -416,9 +417,8 @@ public class MJAnalysis {
 		
 		int numThreads = numCPUThreads + numGPUThreads;
 
-		int total = 10000;
-
-		List<Integer> pool = buildSeededPool(-1234);
+		List<Integer> pool = buildSeededPool(noBlue, -1234);
+		int total = pool.size();
 
 		for (int i = 0; i < skipTo; i++) {
 			pool.remove(0);
