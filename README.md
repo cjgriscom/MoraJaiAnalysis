@@ -10,9 +10,9 @@ The project is split into 3 modules that can be built with Maven and Java >= 17.
 
 Contains the state search tool, which generates about 600MB of data needed for analysis.  To use the `-g` argument you must have a GPU and OpenCL set up.
 
-These arguments worked well on my Nvidia 2080 GPU for the full 10,000 box analysis (about 3 days runtime):
+These arguments worked well on my Nvidia 2080 GPU (16GB RAM, 16 CPU threads) for the full 10,000 box analysis (about 3 days runtime):
 
-```java -cp {classfile location} -Xmx13g io.chandler.morajai.MJAnalysis --skipTo=0 --storageDir=./ -g4 -G16 -c0 -C8```
+```java -Xmx10g -jar morajai-core/target/morajai-core-1.0.0-SNAPSHOT.jar --skipTo=0 --storageDir=./results -g4 -G16 -c0 -C8```
 
 The output is split into 10,000 text files which can be parsed and processed using the `morajai-analysis` module.
 
@@ -22,6 +22,7 @@ The output is split into 10,000 text files which can be parsed and processed usi
  * `ResultFilter.java` - File through the JSON to extract states with the desired characteristics
  * `ResultStatistics.java` - General stats calculator
  * `ResultPreviewServer.java` - Launches a local web server that can preview the output of `ResultFilter.java`
+ * `MoraJaiSolver.java` - A BFS solver that can print out the solution path for a given state.
 
 ## morajai-simulator
 
@@ -36,9 +37,10 @@ The minified JS bundle ends up here:
 It can be instantiated with this HTML (Bootstrap for GUI):
 
 ```html
+<script type="module" src="./morajai-bundle.min.js"></script>
+
 <div class="col-5 p-2 position-relative">
   <div class="mb-3 d-flex">
-    <h5>&nbsp;</h5>
     <div class="form-check form-switch d-flex align-items-center">
       <input class="form-check-input" type="checkbox" id="spoilerMode">
       <label class="form-text form-check-label ms-2" for="spoilerMode">Spoiler Mode</label>
@@ -46,10 +48,9 @@ It can be instantiated with this HTML (Bootstrap for GUI):
   </div>
   <canvas id="puzzle-canvas" class="w-100 p-0"></canvas>
 </div>
-<script>
-  async function main() {
-    await import(`./morajai-bundle.min.js`);
 
+<script>
+  function main() {
     // Load 
     const MoraJaiSimulator = window['MoraJaiSimulator'];
     if (!MoraJaiSimulator) {
@@ -61,7 +62,7 @@ It can be instantiated with this HTML (Bootstrap for GUI):
 
     const onResizeCanvas = (width) => {
       console.log("onResizeCanvas", width);
-      // Callback with the current width of the canvas, in case you need to resize anything else
+      // Callback with the current width of the responsive canvas, in case you need to resize anything else
     }
 
     const onUpdateState = (targetColors, targetTiles, activeStickers) => {
@@ -97,7 +98,7 @@ It can be instantiated with this HTML (Bootstrap for GUI):
     });
   }
 
-  main();
+  document.addEventListener('DOMContentLoaded', main);
 
 </script>
 ```

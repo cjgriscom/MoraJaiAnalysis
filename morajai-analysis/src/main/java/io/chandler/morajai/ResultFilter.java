@@ -26,7 +26,7 @@ public class ResultFilter {
 		ArrayList<String> maxDepthNames = new ArrayList<>();
 
 		BiFunction<JsonArray, HashSet<String>, Boolean> filter = (data, colors) -> {
-			// Gray mechanic
+			// Challenge-Gray mechanic
 			boolean middleColGn = data.get(1).asString().equals("GN") || data.get(4).asString().equals("GN") || data.get(7).asString().equals("GN");
 			boolean middleColYe = data.get(1).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(7).asString().equals("YE");
 			boolean middleColBu = data.get(1).asString().equals("BU") || data.get(4).asString().equals("BU") || data.get(7).asString().equals("BU");
@@ -60,7 +60,7 @@ public class ResultFilter {
 			boolean blackOrRedWhite =  colors.contains("BK") || (colors.contains("RD") && colors.contains("WH"));
 			boolean buBkPuYeMechanic = colors.contains("BU") && blackOrRedWhite && yellowInMiddleBottom && putpleInTopMiddle;
 			
-			boolean result = true;
+			boolean result = !buBkPuYeMechanic && !grayMechanic; // Use this to set the filter, or return true for no filter
 
 			if (result && colors.contains("debug")) {
 				System.out.println("data: " + data);
@@ -78,11 +78,11 @@ public class ResultFilter {
 
 			return result;
 			
-
+			// Old filters that I used
+			// return !buBkPuYeMechanic && !grayMechanic
 			//return colors.contains("PI"); // 388_C_GY_C_BK_C_BU_C_BU - Experimental 1
 			//return !colors.contains("BK") && !colors.contains("GN") && !colors.contains("RD");// - Experimental 4
 			// return !colors.contains("BU"); - Experimental 3
-			// 4471_C_WH_C_WH_C_YE_C_RD - Experimental 4
 			//return (!colors.contains("PU") || !colors.contains("YE")) && (!colors.contains("GN"));
 		};
 
@@ -95,9 +95,6 @@ public class ResultFilter {
 					new FileReader(resultsFile.toFile()), 1024*1024*10)).asObject();
 
 		for (String key : results.names()) {
-			if (!key.equals("5566")) {
-				continue;
-			}
 			JsonObject result = results.get(key).asObject();
 
 			String executor = result.getString("executor", "");
@@ -119,7 +116,6 @@ public class ResultFilter {
 
 			boolean acceptedResult = false;
 			int acceptedValue = 0;
-			// resultMap.get(""+maxDepth) is a JsonArray of arrays
 
 			ArrayList<String> localResults = new ArrayList<>();
 			for (int depth = maxDepthValue; depth > 0; depth--) {
@@ -143,9 +139,6 @@ public class ResultFilter {
 						colors.add(color);
 					}
 
-					//if (depth == 69) {
-					//	colors.add("debug");
-					//}
 					if (filter.apply(stateJsonArray, colors)) {
 						acceptedResult = true;
 						if (depth >= acceptedValue - depthRange) {
