@@ -14,6 +14,7 @@ class MoraJaiSimulator {
 		this.onSolvedCallback = onSolved;
 
         this.spoilerMode = initialSpoilerMode;
+        this.actionIcons = false;
         
         this.lastContainerWidth = "";
         this.svgElement = null;
@@ -25,14 +26,27 @@ class MoraJaiSimulator {
             'YE': '#e8d221', 'BU': '#002af2'
         };
 
+        this.iconsUnicode = {
+            'GY': "\uEB99",
+            'WH': "\uF537 \uF53B",
+            'PU': "\uEA4C",
+            'YE': "\uEA76",
+            'GN': "\uF4D2",
+            'PI': "\uF33F",
+            'BK': "\uF2E5",
+            'RD': "\uF1CF",
+            'OR': "\uEDFC",
+            'BU': "\uECD3"
+        };
+
         this.stickerBBox = {
             'T0': '45.993,45.753,33.578,33.578', 'T1': '88.369,45.753,33.578,33.578',
             'T2': '130.654,45.753,33.578,33.578', 'T3': '45.993,88.127,33.578,33.578',
             'T4': '88.369,88.127,33.578,33.578', 'T5': '130.654,88.127,33.578,33.578',
             'T6': '45.993,130.457,33.578,33.578', 'T7': '88.369,130.457,33.578,33.578',
-            'T8': '130.654,130.457,33.578,33.578', 'GY0': '18.785,18.823,21.619,21.619',
-            'GY1': '169.743,18.485,21.619,21.619', 'GY2': '169.799,169.443,21.619,21.619',
-            'GY3': '18.841,169.782,21.619,21.619'
+            'T8': '130.654,130.457,33.578,33.578', 'GY0': '18.285,18.323,21.619,21.619',
+            'GY1': '170.243,18.085,21.619,21.619', 'GY2': '170.499,170.043,21.619,21.619',
+            'GY3': '18.341,169.982,21.619,21.619'
         };
         
         this.targetColors   = ['GY','GY','GY','GY'];
@@ -63,6 +77,8 @@ class MoraJaiSimulator {
 
     setSpoilerMode(mode) { this.spoilerMode = mode; }
     getSpoilerMode() { return this.spoilerMode; }
+
+    setActionIcons(icons) { this.actionIcons = icons; }
     
     watchdogLoop() {
         setTimeout(() => this.watchdogLoop(), 2500);
@@ -80,6 +96,16 @@ class MoraJaiSimulator {
         // Base64 decode morajai_svg
         const svgText = atob(morajai_svg);
         this.svgElement = new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement;
+        
+        const viewBox = this.svgElement.getAttribute('viewBox');
+        if (!viewBox) { console.error("SVG has no viewBox attribute."); return; }
+        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(parseFloat);
+
+        this.minX = minX;
+        this.minY = minY;
+        this.vbWidth = vbWidth;
+        this.vbHeight = vbHeight;
+
         this.render("Loading...");
         this.onSVGLoad();
     }
@@ -141,10 +167,74 @@ class MoraJaiSimulator {
         }
         
         const fillText = (txt) => {
-            this.ctx.save();
-            Object.assign(this.ctx, { font: '500 40px serif', fillStyle: 'white', shadowColor: 'black', shadowBlur: 5, shadowOffsetX: 2, shadowOffsetY: 2, textAlign: 'center', textBaseline: 'middle' });
-            this.ctx.fillText(txt, this.canvas.width / 2.0, this.canvas.height / 2.0);
-            this.ctx.restore();
+
+            if (this.actionIcons) {
+                this.ctx.save();
+                try {
+                    const [minX, minY, vbWidth, vbHeight] = [this.minX, this.minY, this.vbWidth, this.vbHeight];
+                    const scaleX = this.canvas.width / vbWidth, scaleY = this.canvas.height / vbHeight;
+                    
+                    var fontSize = this.canvas.width / 18;
+                    this.ctx.font = Math.round(fontSize) + 'px remixicon';
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+        
+                    if (!this.spoilerMode) {
+                        for (let i = 0; i < 4; i++) {
+                            const bbox = this.stickerBBox["GY"+i].split(",");
+                            const centerX = ((bbox[0] - minX) * scaleX + (bbox[2] - minX) * scaleX / 2);
+                            const centerY = ((bbox[1] - minY) * scaleY + (bbox[3] - minY) * scaleY / 2);
+                            const targetColor = this.targetColors[i];
+                            const icon = this.iconsUnicode[targetColor];
+                            this.ctx.save();
+                            this.ctx.translate(centerX, centerY);
+                            if (this.targetColors[i] === "GN") {
+                                if (i === 0 || i === 2) this.ctx.rotate(Math.PI/2);
+                            }
+                            if (this.activeStickers[i+9] === "0") {
+                                icon.split(" ").forEach(icon => this.ctx.fillText(icon, 0,0));
+                            }
+                            this.ctx.restore();
+                        }
+                    }
+
+                    for (let i = 0; i < 9; i++) {
+                        var activeColor = this.activeStickers[i];
+                        this.ctx.fillStyle = getContrastColor(this.colors[activeColor]);
+                        //if (activeColor === "BU") activeColor = activeStickers[4];
+                        const bbox = this.stickerBBox["T"+i].split(",");
+                        const centerX = ((bbox[0] - minX) * scaleX + (bbox[2] - minX) * scaleX / 2);
+                        const centerY = ((bbox[1] - minY) * scaleY + (bbox[3] - minY) * scaleY / 2);
+                        var icon = this.iconsUnicode[activeColor];
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        if (activeColor === "GN") {
+                            if (i === 0) this.ctx.rotate(Math.PI/4*2);
+                            if (i === 1) this.ctx.rotate(Math.PI/4*3);
+                            if (i === 2) this.ctx.rotate(0);
+                            if (i === 3) this.ctx.rotate(Math.PI/4*1);
+                            if (i === 4) icon = "\u2022";
+                            if (i === 5) this.ctx.rotate(Math.PI/4*1);
+                            if (i === 6) this.ctx.rotate(0);
+                            if (i === 7) this.ctx.rotate(Math.PI/4*3);
+                            if (i === 8) this.ctx.rotate(Math.PI/4*2);
+                        }
+                        icon.split(" ").forEach(icon => this.ctx.fillText(icon, 0,0));
+                        this.ctx.restore();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+                this.ctx.restore();
+            }
+
+            if (txt) {
+                this.ctx.save();
+                Object.assign(this.ctx, { font: '500 40px serif', fillStyle: 'white', shadowColor: 'black', shadowBlur: 5, shadowOffsetX: 2, shadowOffsetY: 2, textAlign: 'center', textBaseline: 'middle' });
+                this.ctx.fillText(txt, this.canvas.width / 2.0, this.canvas.height / 2.0);
+                this.ctx.restore();
+            }
         };
 
         if (this.svgElement) {
@@ -154,13 +244,13 @@ class MoraJaiSimulator {
             img.onload = () => {
                 this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                 URL.revokeObjectURL(url);
-                if (this.render_text) fillText(this.render_text);
-                else this.updateClickableOverlay();
+                fillText(this.render_text);
+                if (!this.render_text) this.updateClickableOverlay();
             };
             img.src = url;
         } else {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            if (this.render_text) fillText(this.render_text);
+            fillText(this.render_text);
         }
     }
 
@@ -175,9 +265,7 @@ class MoraJaiSimulator {
         Object.assign(overlay.style, { top: `${this.canvas.offsetTop}px`, left: `${this.canvas.offsetLeft}px`, width: `${this.canvas.clientWidth}px`, height: `${this.canvas.clientHeight}px` });
         overlay.innerHTML = "";
         
-        const viewBox = this.svgElement.getAttribute('viewBox');
-        if (!viewBox) { console.error("SVG has no viewBox attribute."); return; }
-        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(parseFloat);
+        const [minX, minY, vbWidth, vbHeight] = [this.minX, this.minY, this.vbWidth, this.vbHeight];
         const scaleX = this.canvas.clientWidth / vbWidth, scaleY = this.canvas.clientHeight / vbHeight;
         
         Object.keys(this.stickerBBox).forEach(key => {
@@ -257,6 +345,20 @@ class MoraJaiSimulator {
     }
 }
 
+function getContrastColor(bgColor) {
+    // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color/3943023#3943023
+    // Convert hex to RGB
+    const hex = bgColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black or white based on luminance
+    return luminance > 0.5 ? '#010101' : '#FFFFFF';
+}
 
 window['MoraJaiSimulator'] = MoraJaiSimulator;
 export default MoraJaiSimulator;
