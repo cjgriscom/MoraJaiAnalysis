@@ -150,7 +150,7 @@ class MoraJaiSimulator {
         for (let i = 0; i < 4; i++) {
             const targetColor = this.targetColors[i];
             const visibleColorKey = this.getSpoilerMode() ? targetColor : "GY";
-            if (this.getSpoilerMode()) {
+            if (this.getSpoilerMode() && targetColor !== "GY") {
                 this.setPathHidden("GY"+i);
                 this.setPathColor("C"+i, "#1a1a1a");
             } else {
