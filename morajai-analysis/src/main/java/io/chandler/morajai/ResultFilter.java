@@ -25,24 +25,24 @@ public class ResultFilter {
 		int maxDepth = 0;
 		ArrayList<String> maxDepthNames = new ArrayList<>();
 
-		BiFunction<JsonArray, HashSet<String>, Boolean> filter = (data, colors) -> {
+		BiFunction<ArrayList<String>, HashSet<String>, Boolean> filter = (data, colors) -> {
 			// Challenge-Gray mechanic
-			boolean middleColGn = data.get(1).asString().equals("GN") || data.get(4).asString().equals("GN") || data.get(7).asString().equals("GN");
-			boolean middleColYe = data.get(1).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(7).asString().equals("YE");
-			boolean middleColBu = data.get(1).asString().equals("BU") || data.get(4).asString().equals("BU") || data.get(7).asString().equals("BU");
-			boolean middleColPu = data.get(1).asString().equals("PU") || data.get(4).asString().equals("PU") || data.get(7).asString().equals("PU");
+			boolean middleColGn = data.get(1).equals("GN") || data.get(4).equals("GN") || data.get(7).equals("GN");
+			boolean middleColYe = data.get(1).equals("YE") || data.get(4).equals("YE") || data.get(7).equals("YE");
+			boolean middleColBu = data.get(1).equals("BU") || data.get(4).equals("BU") || data.get(7).equals("BU");
+			boolean middleColPu = data.get(1).equals("PU") || data.get(4).equals("PU") || data.get(7).equals("PU");
 			
-			boolean twoPurplesInMiddle = (data.get(1).asString().equals("PU") && data.get(4).asString().equals("PU")) ||
-				(data.get(4).asString().equals("PU") && data.get(7).asString().equals("PU")) ||
-				(data.get(7).asString().equals("PU") && data.get(1).asString().equals("PU"));
+			boolean twoPurplesInMiddle = (data.get(1).equals("PU") && data.get(4).equals("PU")) ||
+				(data.get(4).equals("PU") && data.get(7).equals("PU")) ||
+				(data.get(7).equals("PU") && data.get(1).equals("PU"));
 			
-			boolean twoYellowsInMiddle = (data.get(1).asString().equals("YE") && data.get(4).asString().equals("YE")) ||
-				(data.get(4).asString().equals("YE") && data.get(7).asString().equals("YE")) ||
-				(data.get(7).asString().equals("YE") && data.get(1).asString().equals("YE"));
+			boolean twoYellowsInMiddle = (data.get(1).equals("YE") && data.get(4).equals("YE")) ||
+				(data.get(4).equals("YE") && data.get(7).equals("YE")) ||
+				(data.get(7).equals("YE") && data.get(1).equals("YE"));
 			
-			boolean twoGreensInMiddle = (data.get(1).asString().equals("GN") && data.get(4).asString().equals("GN")) ||
-				(data.get(4).asString().equals("GN") && data.get(7).asString().equals("GN")) ||
-				(data.get(7).asString().equals("GN") && data.get(1).asString().equals("GN"));
+			boolean twoGreensInMiddle = (data.get(1).equals("GN") && data.get(4).equals("GN")) ||
+				(data.get(4).equals("GN") && data.get(7).equals("GN")) ||
+				(data.get(7).equals("GN") && data.get(1).equals("GN"));
 			
 			boolean grayMechanic = middleColGn && middleColBu && (middleColPu || middleColYe);
 			grayMechanic |= twoPurplesInMiddle && middleColGn;
@@ -50,17 +50,23 @@ public class ResultFilter {
 			grayMechanic |= twoGreensInMiddle && (middleColYe || middleColPu);
 
 			boolean yellowInMiddleBottom =
-				data.get(3).asString().equals("YE") || data.get(4).asString().equals("YE") || data.get(5).asString().equals("YE") ||
-				data.get(6).asString().equals("YE") || data.get(7).asString().equals("YE") || data.get(8).asString().equals("YE");
+				data.get(3).equals("YE") || data.get(4).equals("YE") || data.get(5).equals("YE") ||
+				data.get(6).equals("YE") || data.get(7).equals("YE") || data.get(8).equals("YE");
 			boolean putpleInTopMiddle =
-				data.get(0).asString().equals("PU") || data.get(1).asString().equals("PU") || data.get(2).asString().equals("PU") ||
-				data.get(3).asString().equals("PU") || data.get(4).asString().equals("PU") || data.get(5).asString().equals("PU");
+				data.get(0).equals("PU") || data.get(1).equals("PU") || data.get(2).equals("PU") ||
+				data.get(3).equals("PU") || data.get(4).equals("PU") || data.get(5).equals("PU");
 			
 
 			boolean blackOrRedWhite =  colors.contains("BK") || (colors.contains("RD") && colors.contains("WH"));
 			boolean buBkPuYeMechanic = colors.contains("BU") && blackOrRedWhite && yellowInMiddleBottom && putpleInTopMiddle;
+
+			boolean greyInOuter = 
+				data.get(9).equals("GY") || 
+				data.get(10).equals("GY") || 
+				data.get(11).equals("GY") ||
+				data.get(12).equals("GY");
 			
-			boolean result = !buBkPuYeMechanic && !grayMechanic; // Use this to set the filter, or return true for no filter
+			boolean result = !greyInOuter; // Use this to set the filter, or return true for no filter
 
 			if (result && colors.contains("debug")) {
 				System.out.println("data: " + data);
@@ -138,8 +144,17 @@ public class ResultFilter {
 						String color = stateJsonArray.get(j).asString();
 						colors.add(color);
 					}
+					ArrayList<String> data = new ArrayList<>();
+					for (int j = 0; j < stateJsonArray.size(); j++) {
+						data.add(stateJsonArray.get(j).asString());
+					}
+					String[] nameParts = result.getString("name", "").split("_");
+					data.add(nameParts[2]);
+					data.add(nameParts[4]);
+					data.add(nameParts[6]);
+					data.add(nameParts[8]);
 
-					if (filter.apply(stateJsonArray, colors)) {
+					if (filter.apply(data, colors)) {
 						acceptedResult = true;
 						if (depth >= acceptedValue - depthRange) {
 							acceptedValue = Math.max(acceptedValue, depth);
