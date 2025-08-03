@@ -2,9 +2,9 @@
 
 This repository contains the supporting code for my Mora Jai Box [challenge puzzles](https://chandler.io/posts/2025/07/mora-jai-box-simulator) and [state space analysis](https://chandler.io/posts/2025/07/mora-jai-box-solution-space-analysis/).
 
-The project is split into 3 modules that can be built with Maven and Java >= 17.
+The project is split into 4 modules that can be built with Maven and Java >= 17.
 
-`mvn clean package` will build all 3 modules.
+`mvn clean package` will build all 4 modules.
 
 ## morajai-core
 
@@ -22,7 +22,18 @@ The output is split into 10,000 text files which can be parsed and processed usi
  * `ResultFilter.java` - File through the JSON to extract states with the desired characteristics
  * `ResultStatistics.java` - General stats calculator
  * `ResultPreviewServer.java` - Launches a local web server that can preview the output of `ResultFilter.java`
- * `MoraJaiSolver.java` - A BFS solver that can print out the solution path for a given state.
+
+## morajai-solver
+
+A BFS solver that can print out the solution path for a given state.
+
+ * `MJSolver.java` - Runnable Java source code
+
+The build script also uses TeaVM to generate a JS worker that can be embedded into a web page.
+
+The minified worker ends up here:
+
+```morajai-solver/target/classes/js/morajai-solver.min.js```
 
 ## morajai-simulator
 
@@ -98,6 +109,5 @@ It can be instantiated with this HTML (Bootstrap for GUI):
   }
 
   document.addEventListener('DOMContentLoaded', loadMJS);
-
 </script>
 ```

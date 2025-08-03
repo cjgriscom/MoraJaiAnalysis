@@ -2,6 +2,7 @@ package io.chandler.morajai;
 
 import io.chandler.morajai.MoraJaiBox.Color;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class MJSolver {
     private static final Map<String, Color> COLOR_MAP = new HashMap<>();
@@ -26,7 +27,7 @@ public class MJSolver {
      * @return List of tile indices to press (0-8), or null if no solution found
      */
     public static List<Integer> solve(String[] puzzleState, String[] targetColor) {
-        return solve(puzzleState, targetColor, 85); // Default max depth of 20
+        return solve(puzzleState, targetColor, 85, new HashSet<>(), null); // 84 seems to be the absolute max depth
     }
 
     /**
@@ -34,9 +35,12 @@ public class MJSolver {
      * @param puzzleState Array of color strings representing the 3x3 grid
      * @param targetColor The target color for all corners
      * @param maxDepth Maximum search depth
+     * @param visited Set of visited states
+     * @param progress Progress callback
      * @return List of tile indices to press (0-8), or null if no solution found
      */
-    public static List<Integer> solve(String[] puzzleState, String[] targetColor, int maxDepth) {
+    public static List<Integer> solve(String[] puzzleState, String[] targetColor, int maxDepth, Set<Integer> visited, Consumer<Integer> progress) {
+        long curTime = System.currentTimeMillis();
         if (puzzleState.length != 9) {
             throw new IllegalArgumentException("Puzzle state must have exactly 9 tiles");
         }
@@ -64,19 +68,23 @@ public class MJSolver {
 
         // BFS data structures
         Queue<SearchNode> queue = new LinkedList<>();
-        Set<Integer> visited = new HashSet<>();
         
         // Add initial state
         int initialState = box.getState();
-        queue.offer(new SearchNode(initialState, new ArrayList<>()));
+        queue.offer(new SearchNode(initialState, ""));
         visited.add(initialState);
 
         while (!queue.isEmpty()) {
             SearchNode current = queue.poll();
             
             // Skip if we've reached max depth
-            if (current.moves.size() >= maxDepth) {
+            if (current.moves.length() >= maxDepth) {
                 continue;
+            } else {
+                if (System.currentTimeMillis() - curTime > 250) {
+                    curTime = System.currentTimeMillis();
+                    progress.accept(current.moves.length());
+                }
             }
             
             // Try pressing each tile
@@ -96,15 +104,20 @@ public class MJSolver {
                 
                 // Check if solved
                 if (newBox.areInnerMatchingOuter()) {
-                    List<Integer> solution = new ArrayList<>(current.moves);
-                    solution.add(tile);
-                    return solution;
+                    String solution = current.moves;
+                    solution += tile;
+                    // Convert to list
+                    List<Integer> solutionList = new ArrayList<>();
+                    for (int i = 0; i < solution.length(); i++) {
+                        solutionList.add(Integer.parseInt(solution.substring(i, i + 1)));
+                    }
+                    return solutionList;
                 }
                 
                 // Add to queue for further exploration
                 visited.add(newState);
-                List<Integer> newMoves = new ArrayList<>(current.moves);
-                newMoves.add(tile);
+                String newMoves = current.moves;
+                newMoves += tile;
                 queue.offer(new SearchNode(newState, newMoves));
             }
         }
@@ -153,9 +166,9 @@ public class MJSolver {
      */
     private static class SearchNode {
         final int state;
-        final List<Integer> moves;
+        final String moves;
         
-        SearchNode(int state, List<Integer> moves) {
+        SearchNode(int state, String moves) {
             this.state = state;
             this.moves = moves;
         }
@@ -165,8 +178,8 @@ public class MJSolver {
      * Test method
      */
     public static void main(String[] args) {
-        String[] puzzleState = {"YE","BK","PU","WH","PI","GY","OR","BK","PI"};
-        String[] targetColor = {"PI","WH","WH","WH"};
+        String[] puzzleState = {"GY","OR","OR","PU","OR","BK","OR","RD","GN"};
+        String[] targetColor = {"RD","RD","OR","RD"};
         
         long startTime = System.currentTimeMillis();
         List<Integer> solution = solve(puzzleState, targetColor); 

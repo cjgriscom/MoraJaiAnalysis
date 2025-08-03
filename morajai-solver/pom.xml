@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.chandler.morajai</groupId>
+  <artifactId>morajai-solver</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <parent>
+    <groupId>io.chandler</groupId>
+    <artifactId>morajai</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <name>morajai-solver</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <teavm.version>0.12.0</teavm.version>
+    <teavm.debug>false</teavm.debug>
+    <teavm.minifying>true</teavm.minifying>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.chandler.morajai</groupId>
+      <artifactId>morajai-core</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+		<dependency>
+			<groupId>org.teavm</groupId>
+			<artifactId>teavm-core</artifactId>
+			<version>${teavm.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.teavm</groupId>
+			<artifactId>teavm-classlib</artifactId>
+			<version>${teavm.version}</version>
+			<scope>provided</scope>
+		</dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <release>${jar.java.release}</release>
+          <source>${jar.java.source}</source>
+          <target>${jar.java.target}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+				<groupId>org.teavm</groupId>
+				<artifactId>teavm-maven-plugin</artifactId>
+				<version>${teavm.version}</version>
+				<executions>
+					<execution>
+						<id>morajai-solver</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+						<configuration>
+							<targetDirectory>${project.build.directory}/js</targetDirectory>
+							<mainClass>io.chandler.morajai.MJSolverWorker</mainClass>
+							<minifying>${teavm.minifying}</minifying>
+							<debugInformationGenerated>${teavm.debug}</debugInformationGenerated>
+							<sourceMapsGenerated>${teavm.debug}</sourceMapsGenerated>
+							<sourceFilesCopied>${teavm.debug}</sourceFilesCopied>
+							<optimizationLevel>ADVANCED</optimizationLevel>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+      
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>post-process-js</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>io.chandler.morajai.tools.PostProcessJS</mainClass>
+              <arguments>
+                <argument>${teavm.minifying}</argument>
+                <argument>${project.build.directory}/js/classes.js</argument>
+                <argument>${project.build.directory}/js/morajai-solver</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

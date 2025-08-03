@@ -283,27 +283,16 @@ public class MoraJaiBox {
 		tileColors[tile1] = temp;
 	}
 
-	private void subPressBlue(int tile) {
-		// Perform action of center tile
-		switch (COLOR_VALUES[tileColors[4]]) {
-			case C_GY: subPressGray(tile); break;
-			case C_RD: subPressRed(tile); break;
-			case C_GN: subPressGreen(tile); break; 
-			case C_BK: subPressBlack(tile); break;
-			case C_WH: subPressWhite(tile); break;
-			case C_PI: subPressPink(tile); break;
-			case C_PU: subPressPurple(tile); break;
-			case C_YE: subPressYellow(tile); break;
-			case C_BU: break;
-			case C_OR: subPressOrange(tile); break;
-		}
-	}
-
 	public int pressTile(int tile) {
 		if (tile >= 9) return PRESS_OK;
 		if (isSolved()) return PRESS_COMPLETED;
 
-		switch (COLOR_VALUES[tileColors[tile]]) {
+		Color color = COLOR_VALUES[tileColors[tile]];
+		if (color == Color.C_BU) {
+			color = COLOR_VALUES[tileColors[4]];
+		}
+		
+		switch (color) {
 			case C_GY: subPressGray(tile); break;
 			case C_RD: subPressRed(tile); break;
 			case C_GN: subPressGreen(tile); break;
@@ -312,7 +301,7 @@ public class MoraJaiBox {
 			case C_PI: subPressPink(tile); break;
 			case C_PU: subPressPurple(tile); break;
 			case C_YE: subPressYellow(tile); break;
-			case C_BU: subPressBlue(tile); break;
+			case C_BU: break;
 			case C_OR: subPressOrange(tile); break;
 		}
 

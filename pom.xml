@@ -46,5 +46,6 @@
 		<module>morajai-core</module>
 		<module>morajai-analysis</module>
 		<module>morajai-simulator</module>
+		<module>morajai-solver</module>
 	</modules>
 </project>
